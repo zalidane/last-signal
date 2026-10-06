@@ -2,11 +2,27 @@
   "pointsPerLiter": 25,
   "drinkLiters": 0.5,
   "meters": {
-    "health": { "warn": 55, "danger": 30 },
-    "hunger": { "warn": 35, "danger": 18 },
-    "hydration": { "warn": 40, "danger": 20 },
-    "fatigue": { "warn": 60, "danger": 85, "highIsBad": true },
-    "morale": { "warn": 35, "danger": 15 }
+    "health": {
+      "warn": 55,
+      "danger": 30
+    },
+    "hunger": {
+      "warn": 35,
+      "danger": 18
+    },
+    "hydration": {
+      "warn": 40,
+      "danger": 20
+    },
+    "fatigue": {
+      "warn": 60,
+      "danger": 85,
+      "highIsBad": true
+    },
+    "morale": {
+      "warn": 35,
+      "danger": 15
+    }
   },
   "bodyTemp": {
     "startC": 37,
@@ -31,17 +47,67 @@
     "dehydratedHeatBonusC": 0.45,
     "dehydratedHeatBelow": 25
   },
-  "heatHealthPerHour": { "mild": 4, "severe": 8, "critical": 14 },
-  "coldHealthPerHour": { "mild": 4, "severe": 9 },
+  "heatHealthPerHour": {
+    "mild": 4,
+    "severe": 8,
+    "critical": 14
+  },
+  "coldHealthPerHour": {
+    "mild": 4,
+    "severe": 9
+  },
   "emptyHydrationHealthPerHour": 2.1,
   "emptyHungerHealthPerHour": 1.05,
   "activities": {
-    "sleep": { "hunger": 0.7, "hydration": 0.85, "fatigue": -11, "morale": 0.4, "exertionC": 0 },
-    "rest": { "hunger": 1.05, "hydration": 1.45, "fatigue": -7, "morale": 0.15, "exertionC": -0.15 },
-    "camp": { "hunger": 2.1, "hydration": 2.6, "fatigue": 3.5, "morale": -0.05, "exertionC": 0.35 },
-    "build": { "hunger": 3.3, "hydration": 7.2, "fatigue": 6.5, "morale": -0.1, "exertionC": 0.85 },
-    "search": { "hunger": 2.7, "hydration": 4.1, "fatigue": 4.5, "morale": -0.05, "exertionC": 0.55 },
-    "travel": { "hunger": 3.4, "hydration": 5.6, "fatigue": 5.5, "morale": -0.15, "exertionC": 1.25 }
+    "sleep": {
+      "hunger": 0.7,
+      "hydration": 0.85,
+      "fatigue": -11,
+      "morale": 0.4,
+      "exertionC": 0
+    },
+    "rest": {
+      "hunger": 1.05,
+      "hydration": 1.45,
+      "fatigue": -7,
+      "morale": 0.15,
+      "exertionC": -0.15
+    },
+    "camp": {
+      "hunger": 2.1,
+      "hydration": 2.6,
+      "fatigue": 3.5,
+      "morale": -0.05,
+      "exertionC": 0.35
+    },
+    "build": {
+      "hunger": 3.3,
+      "hydration": 7.2,
+      "fatigue": 6.5,
+      "morale": -0.1,
+      "exertionC": 0.85
+    },
+    "search": {
+      "hunger": 2.7,
+      "hydration": 4.1,
+      "fatigue": 4.5,
+      "morale": -0.05,
+      "exertionC": 0.55
+    },
+    "travel": {
+      "hunger": 3.4,
+      "hydration": 5.6,
+      "fatigue": 5.5,
+      "morale": -0.15,
+      "exertionC": 1.25
+    },
+    "wait": {
+      "hunger": 0.9,
+      "hydration": 1.3,
+      "fatigue": -3,
+      "morale": -0.35,
+      "exertionC": -0.1
+    }
   },
   "bandHydrationMultiplier": {
     "cold": 0.5,
@@ -60,7 +126,10 @@
     "rest-shelter": 0.32,
     "sleep-open": 0.85,
     "sleep-camp": 0.6,
-    "sleep-shelter": 0.45
+    "sleep-shelter": 0.45,
+    "wait-open": 0.8,
+    "wait-camp": 0.55,
+    "wait-shelter": 0.4
   },
   "felt": {
     "shadeDeltaC": -14,
@@ -69,7 +138,9 @@
     "fireNightDeltaC": 12,
     "wreckNightDeltaC": 5,
     "wreckShadeDeltaC": -11,
-    "zoneSearchShadeC": -6
+    "zoneSearchShadeC": -6,
+    "openDayDeltaC": 0,
+    "openNightDeltaC": 0
   },
   "actionBudget": {
     "base": 12,
@@ -140,7 +211,33 @@
       }
     ]
   },
-  "ration": { "hunger": 36, "morale": 3, "warmedHunger": 6, "warmedMorale": 5 },
+  "ration": {
+    "hunger": 36,
+    "morale": 3,
+    "warmedHunger": 6,
+    "warmedMorale": 5
+  },
   "restHours": 2,
-  "sandstormHydrationBonus": 1.6
+  "sandstormHydrationBonus": 1.6,
+  "wait": {
+    "hourOptions": [
+      1,
+      2
+    ],
+    "openSleep": {
+      "fatigueMultiplier": 0.4,
+      "moralePerHour": -0.6,
+      "hazardChance": 0.12,
+      "hazardId": "scorpion",
+      "hazardLog": "You wake to a hot nail in the wrist. Out here the night has tenants, and you slept in their house."
+    },
+    "logs": {
+      "waitOpen": "You sit where you are and let the clock do the walking. No shade worth the name.",
+      "waitCamp": "You sit against the wreck and wait.",
+      "waitShelter": "You wait it out in the shelter.",
+      "waitDone": "Waiting is a choice. The desert charges for it like any other.",
+      "sleepOpen": "You scrape a hollow in the gravel and lie down in the open. Nothing between you and the sky.",
+      "sleepOpenDone": "You come up stiff and gritty. It was sleep, mostly."
+    }
+  }
 }

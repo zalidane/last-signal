@@ -8,7 +8,8 @@ All of the numbers below are the values in `data/`. Change those files, not the 
 
 - A day is 24 hours. You wake at 06:00.
 - Bands are in `data/biome.json`: night, dawn, morning, midday (10:00–16:00, 53°C), afternoon, dusk, night.
-- Work, search, travel, build, and experiments must finish before the next 06:00. Sleep is the action that crosses dawn.
+- Work, search, travel, build, and experiments must finish before the next 06:00. Sleep, Wait, and Rest are the actions that reach or cross dawn.
+- Rest in shade is 2h but is clamped to the hours left before 06:00 (at 05:00 it is a 1h rest that lands on dawn). It is never disabled.
 - At dawn: stills produce, a lit signal spends fuel, rescue is checked, a sandstorm may roll, work hours reset.
 - A sprained ankle adds 1 hour to every walk (`data/starting.json` and the fall hazard).
 
@@ -49,11 +50,20 @@ Hourly hydration loss is `activity rate × band multiplier × context multiplier
 
 Band multipliers: cold 0.5, mild 0.72, warm 1.15, hot 1.7, extreme 2.55.
 
-Context multipliers (the shade and shelter discounts): travel 1, zone search 0.95, camp search 0.68, building 0.72, rest in shade 0.4, rest in shelter 0.32, sleep at the wreck 0.6, sleep in shelter 0.45.
+Context multipliers (the shade and shelter discounts): travel 1, zone search 0.95, camp search 0.68, building 0.72, rest in shade 0.4, rest in shelter 0.32, wait in the open 0.8, wait at the wreck 0.55, wait in shelter 0.4, sleep in the open 0.85, sleep at the wreck 0.6, sleep in shelter 0.45.
 
 A solar still yields 0.5–1.0 L at dawn (`data/events.json`). A still dug in the dry wash adds 0.25 L, capped at 1.25 L. Plan on about three. Maximum four.
 
 A sandstorm adds 1.6 hydration loss per exposed hour.
+
+## Waiting and sleeping in the open
+
+Waiting is a survivor's choice, not a menu state. **Invariant: a live run always offers at least one enabled action.** `Wait` is that action. It is available in any zone, at any hour, in any condition, and costs no work hours (`hasValidAction` in `src/logic/actions.ts`, covered by `tests/wait.test.ts`).
+
+- Buttons: `Wait 1h`, `Wait 2h` (`needs.wait.hourOptions`), and `Wait until dawn` when that is a different length. A wait that crosses 06:00 runs the full dawn: day +1, stills, signal fuel, rescue check, sandstorm roll, and work hours reset by the budget formula.
+- Exposure uses the normal hour tick with activity `wait` (`needs.activities.wait`). At camp the wreck, shelter, and fire modifiers apply as for rest. In a zone you are in the open: `felt.openDayDeltaC` 0 by day, `felt.openNightDeltaC` 0 at night. Hydration multipliers: `wait-open` 0.8, `wait-camp` 0.55, `wait-shelter` 0.4.
+- Rough cost from 37°C and full health: 6h exposed from 10:00 takes about 32 health (heat). An open night from 22:00 to dawn takes about 48 health (cold). The same night in a shelter with a fire costs nothing.
+- `Sleep in the open` (sleep away from camp) runs to dawn with the bare-air night, fatigue recovery ×0.4, morale −0.6/h, and a 12% chance of a scorpion sting at dawn (`needs.wait.openSleep`). Waiting awake skips the sting but recovers less.
 
 ## Work hours
 

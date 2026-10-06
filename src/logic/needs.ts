@@ -24,11 +24,15 @@ export function feltTemperature(
 
   if (ctx.activity === "travel") return felt;
 
+  if (ctx.activity === "wait" && !ctx.atCamp) {
+    return felt + (cold ? mods.openNightDeltaC : mods.openDayDeltaC);
+  }
+
   if (ctx.activity === "search" && !ctx.atCamp) {
     return felt + (cold ? 0 : mods.zoneSearchShadeC);
   }
 
-  if (ctx.activity === "sleep" || ctx.activity === "rest") {
+  if (ctx.activity === "sleep" || ctx.activity === "rest" || ctx.activity === "wait") {
     if (cold) {
       if (shelter) felt += mods.shelterNightDeltaC;
       else if (ctx.atCamp) felt += mods.wreckNightDeltaC;
@@ -72,6 +76,10 @@ export function hydrationContext(state: RunState, ctx: HourContext): string {
   if (ctx.activity === "camp") return "camp";
   if (ctx.activity === "rest") {
     return state.camp.shelter && ctx.atCamp ? "rest-shelter" : "rest-shade";
+  }
+  if (ctx.activity === "wait") {
+    if (!ctx.atCamp) return "wait-open";
+    return state.camp.shelter ? "wait-shelter" : "wait-camp";
   }
   if (state.camp.shelter && ctx.atCamp) return "sleep-shelter";
   if (ctx.atCamp) return "sleep-camp";
@@ -175,8 +183,11 @@ export function applyHour(state: RunState, ctx: HourContext, data: GameData): Ru
 
   next.hydration = clamp(next.hydration - hydrationLoss, 0, 100);
   next.hunger = clamp(next.hunger - rates.hunger, 0, 100);
-  next.fatigue = clamp(next.fatigue + rates.fatigue, 0, 100);
-  next.morale = clamp(next.morale + rates.morale, 0, 100);
+  const openSleep = ctx.activity === "sleep" && !ctx.atCamp ? data.needs.wait.openSleep : null;
+  const fatigueRate = openSleep && rates.fatigue < 0 ? rates.fatigue * openSleep.fatigueMultiplier : rates.fatigue;
+  const moraleRate = openSleep ? openSleep.moralePerHour : rates.morale;
+  next.fatigue = clamp(next.fatigue + fatigueRate, 0, 100);
+  next.morale = clamp(next.morale + moraleRate, 0, 100);
 
   const parts = threatParts(next, data);
   const loss = partTotal(parts);

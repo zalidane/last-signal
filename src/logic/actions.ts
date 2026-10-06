@@ -14,7 +14,7 @@ import type {
 import { resolveDawn } from "./dawn.ts";
 import { applyEffect } from "./effects.ts";
 import { finishIfEnded } from "./ending.ts";
-import { rollHazards } from "./hazards.ts";
+import { applyHazard, rollHazards } from "./hazards.ts";
 import { addItem, findLog, hasAll, itemQty, missingNames, presentItem, spend } from "./inventory.ts";
 import {
   learnDiscovery,
@@ -55,6 +55,7 @@ function runHours(
   ctx: HourContext,
   data: GameData,
   rng: Rng,
+  beforeDawn?: (state: RunState, journal: Journal) => StepResult,
 ): StepResult {
   let journalNow = journal;
   const next = advanceTime(
@@ -63,7 +64,13 @@ function runHours(
     ctx,
     data,
     (dawnState) => {
-      const dawned = resolveDawn(dawnState, journalNow, data, rng);
+      let ready = dawnState;
+      if (beforeDawn) {
+        const pre = beforeDawn(dawnState, journalNow);
+        ready = pre.state;
+        journalNow = pre.journal;
+      }
+      const dawned = resolveDawn(ready, journalNow, data, rng);
       journalNow = dawned.journal;
       return dawned.state;
     },
@@ -93,6 +100,8 @@ export function applyCommand(
       return rest(state, journal, data, rng);
     case "sleep":
       return sleep(state, journal, data, rng);
+    case "wait":
+      return wait(state, journal, command.hours, data, rng);
     case "travel":
       return travel(state, journal, command.zoneId, data, rng);
     case "return":
@@ -110,10 +119,13 @@ export function applyCommand(
   }
 }
 
+/** Rest never runs past dawn: it is clamped to the hours left in the night. */
+export function restHoursFor(state: RunState, data: GameData): number {
+  return Math.max(1, Math.min(data.needs.restHours, hoursUntilDawn(state.hour)));
+}
+
 function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
-  const hours = data.needs.restHours;
-  const block = timeBlock(state, hours, false);
-  if (block) return fail(state, journal, block);
+  const hours = restHoursFor(state, data);
   const camp = atCamp(state);
   let step = runHours(
     pushLog(state, camp ? "You get out of the sun and wait." : "You take the shade the rocks will give you."),
@@ -138,9 +150,7 @@ function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): Step
 }
 
 function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
-  if (!atCamp(state)) {
-    return fail(state, journal, "Not out here. Get back to the wreck before you close your eyes.");
-  }
+  if (!atCamp(state)) return sleepOpen(state, journal, data, rng);
   const hours = hoursUntilDawn(state.hour);
   const cold =
     !state.camp.shelter && !state.camp.firePit
@@ -155,6 +165,58 @@ function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): Ste
     rng,
   );
   return finishIfEnded(step.state, step.journal, data);
+}
+
+/** Sleeping away from camp: allowed, but worse recovery and something may find you. */
+function sleepOpen(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
+  const spec = data.needs.wait;
+  const hours = hoursUntilDawn(state.hour);
+  const step = runHours(
+    pushLog(state, spec.logs.sleepOpen),
+    journal,
+    hours,
+    contextFor("sleep", false),
+    data,
+    rng,
+    (night, nightJournal) => {
+      let woke: StepResult = { state: night, journal: nightJournal };
+      if (rng.next() < spec.openSleep.hazardChance) {
+        const hazard = data.hazardById.get(spec.openSleep.hazardId);
+        if (hazard) woke = applyHazard(night, nightJournal, hazard, data, spec.openSleep.hazardLog);
+      }
+      if (woke.state.phase === "ended") return woke;
+      return { ...woke, state: pushLog(woke.state, spec.logs.sleepOpenDone) };
+    },
+  );
+  return finishIfEnded(step.state, step.journal, data);
+}
+
+/** Resolve a wait request to whole hours. Omitted means "until the next dawn". */
+export function waitHoursFor(state: RunState, requested: number | undefined): number {
+  if (requested === undefined) return hoursUntilDawn(state.hour);
+  if (!Number.isFinite(requested)) return 0;
+  return Math.floor(requested);
+}
+
+/**
+ * Waiting is always legal: any zone, any hour, any condition, no work hours.
+ * It applies normal exposure. Camp gives the wreck, shelter, and fire; the open gives nothing.
+ */
+function wait(
+  state: RunState,
+  journal: Journal,
+  requested: number | undefined,
+  data: GameData,
+  rng: Rng,
+): StepResult {
+  const hours = waitHoursFor(state, requested);
+  if (hours < 1 || hours > 24) return fail(state, journal, "Wait how long?");
+  const camp = atCamp(state);
+  const logs = data.needs.wait.logs;
+  const opener = !camp ? logs.waitOpen : state.camp.shelter ? logs.waitShelter : logs.waitCamp;
+  const step = runHours(pushLog(state, opener), journal, hours, contextFor("wait", camp), data, rng);
+  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  return { ...step, state: pushLog(step.state, logs.waitDone) };
 }
 
 function travel(
@@ -800,21 +862,38 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
     }));
   }
 
-  const restHours = data.needs.restHours;
-  const restBlock = timeBlock(state, restHours, false);
-  const restPreview = restBlock ? { detail: restBlock, warning: "" } : previewLine(state, restHours, contextFor("rest", camp), data);
-  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", restPreview.detail, restPreview.warning, Boolean(restBlock), { type: "rest" }));
+  const restHours = restHoursFor(state, data);
+  const restPreview = previewLine(state, restHours, contextFor("rest", camp), data);
+  const restNote = restHours < data.needs.restHours ? " · until dawn" : "";
+  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", `${restPreview.detail}${restNote}`, restPreview.warning, false, { type: "rest" }));
 
-  const sleepBlock = camp ? null : "Sleep is at camp. Get back first.";
-  const night =
-    !state.camp.shelter && !state.camp.firePit
-      ? "A hard night against the wreck"
-      : state.camp.shelter && state.camp.firePit
-        ? "Shelter and fire"
-        : state.camp.shelter
-          ? "The shelter should blunt the cold"
-          : "The fire should cover the cold";
-  actions.push(button("sleep", "Now", "Sleep until dawn", sleepBlock ?? night, "", Boolean(sleepBlock), { type: "sleep" }));
+  const dawnHours = hoursUntilDawn(state.hour);
+  if (camp) {
+    const night =
+      !state.camp.shelter && !state.camp.firePit
+        ? "A hard night against the wreck"
+        : state.camp.shelter && state.camp.firePit
+          ? "Shelter and fire"
+          : state.camp.shelter
+            ? "The shelter should blunt the cold"
+            : "The fire should cover the cold";
+    actions.push(button("sleep", "Now", "Sleep until dawn", `${dawnHours}h · ${night}`, "", false, { type: "sleep" }));
+  } else {
+    const preview = previewLine(state, dawnHours, contextFor("sleep", false), data);
+    actions.push(
+      button(
+        "sleep",
+        "Now",
+        "Sleep in the open",
+        `${preview.detail} · poor rest, no cover, things that bite`,
+        preview.warning,
+        false,
+        { type: "sleep" },
+      ),
+    );
+  }
+
+  actions.push(...waitButtons(state, data));
 
   if (camp && state.camp.wreckSearchesLeft > 0) {
     const hours = data.camp.searchHours;
@@ -883,6 +962,35 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
   }
 
   return actions;
+}
+
+/** The always-available actions. These never disable: waiting is a survivor's choice, not a menu state. */
+export function waitButtons(state: RunState, data: GameData): ActionButton[] {
+  const camp = atCamp(state);
+  const ctx = contextFor("wait", camp);
+  const dawnHours = hoursUntilDawn(state.hour);
+  const buttons: ActionButton[] = [];
+  const options = [...new Set(data.needs.wait.hourOptions.filter((hours) => hours >= 1 && hours <= 24))];
+  for (const hours of options) {
+    const preview = previewLine(state, hours, ctx, data);
+    const dawn = hours === dawnHours ? " · until dawn" : hours > dawnHours ? " · past dawn" : "";
+    buttons.push(
+      button(`wait-${hours}`, "Now", `Wait ${hours}h`, `${preview.detail}${dawn}`, preview.warning, false, { type: "wait", hours }),
+    );
+  }
+  if (!options.includes(dawnHours)) {
+    const preview = previewLine(state, dawnHours, ctx, data);
+    buttons.push(
+      button("wait-dawn", "Now", "Wait until dawn", `${preview.detail}${camp ? "" : " · awake, in the open"}`, preview.warning, false, { type: "wait" }),
+    );
+  }
+  return buttons;
+}
+
+/** Invariant: a live run always offers at least one enabled action. */
+export function hasValidAction(state: RunState, journal: Journal, data: GameData): boolean {
+  if (state.phase !== "playing") return true;
+  return listActions(state, journal, data).some((action) => !action.disabled && action.command !== null);
 }
 
 function recipeButtons(

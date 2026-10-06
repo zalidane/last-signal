@@ -1,4 +1,4 @@
-export type Activity = "sleep" | "rest" | "camp" | "build" | "search" | "travel";
+export type Activity = "sleep" | "rest" | "wait" | "camp" | "build" | "search" | "travel";
 
 export type BandId = "cold" | "mild" | "warm" | "hot" | "extreme";
 
@@ -85,6 +85,10 @@ export interface NeedsConfig {
     wreckNightDeltaC: number;
     wreckShadeDeltaC: number;
     zoneSearchShadeC: number;
+    /** Waiting in the open away from camp, daytime: sparse brush, almost no shade. */
+    openDayDeltaC: number;
+    /** Waiting in the open away from camp, at night: nothing between you and the sky. */
+    openNightDeltaC: number;
   };
   actionBudget: { base: number; minimum: number; rules: BudgetRule[] };
   ration: {
@@ -95,6 +99,27 @@ export interface NeedsConfig {
   };
   restHours: number;
   sandstormHydrationBonus: number;
+  wait: WaitConfig;
+}
+
+export interface WaitConfig {
+  /** Fixed wait lengths offered as buttons. "Until dawn" is offered on top. */
+  hourOptions: number[];
+  openSleep: {
+    fatigueMultiplier: number;
+    moralePerHour: number;
+    hazardChance: number;
+    hazardId: string;
+    hazardLog: string;
+  };
+  logs: {
+    waitOpen: string;
+    waitCamp: string;
+    waitShelter: string;
+    waitDone: string;
+    sleepOpen: string;
+    sleepOpenDone: string;
+  };
 }
 
 export interface BiomeConfig {
@@ -510,6 +535,8 @@ export type Command =
   | { type: "abandon" }
   | { type: "rest" }
   | { type: "sleep" }
+  /** Always legal. hours omitted means "until dawn". */
+  | { type: "wait"; hours?: number }
   | { type: "travel"; zoneId: string }
   | { type: "return" }
   | { type: "search" }
