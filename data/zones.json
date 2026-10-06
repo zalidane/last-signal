@@ -1,0 +1,73 @@
+[
+  {
+    "id": "wreckage-field",
+    "name": "Wreckage Field",
+    "travelHours": 1,
+    "searchHours": 2,
+    "exposure": 1,
+    "blurb": "The scatter of the crash. Seats, skin, and the small things that fell out when the plane broke.",
+    "arriveLog": "The wreckage field is a bright trash of metal. Close to camp. Still no shade you would trust at noon.",
+    "loot": [
+      { "id": "debris", "weight": 4, "qty": 1 },
+      { "id": "cloth", "weight": 3, "qty": 1 },
+      { "id": "stone", "weight": 2, "qty": 1 },
+      { "id": "fuel", "weight": 4, "qty": 1 },
+      { "id": "fuel", "weight": 1, "qty": 2 },
+      { "id": "plastic-sheet", "weight": 3, "qty": 1 },
+      { "id": "container", "weight": 3, "qty": 1 },
+      { "id": "tubing", "weight": 2, "qty": 1 },
+      { "id": "water", "weight": 3, "qty": 0.5 },
+      { "id": "ration", "weight": 2, "qty": 1 },
+      { "id": "first-aid", "weight": 1, "qty": 1 },
+      { "id": "field-manual", "weight": 1, "qty": 1 },
+      { "id": "nothing", "weight": 2, "qty": 0 }
+    ]
+  },
+  {
+    "id": "dry-wash",
+    "name": "Dry Wash",
+    "travelHours": 3,
+    "searchHours": 2,
+    "exposure": 1.08,
+    "blurb": "A low cut in the desert where water used to run. Plants gather here. So do things that bite.",
+    "arriveLog": "The wash is a pale road of sand between banks. Cooler in the cut. Not kind. This is where a still wants to be dug.",
+    "loot": [
+      { "id": "prickly-pear", "weight": 4, "qty": 1 },
+      { "id": "barrel-cactus", "weight": 3, "qty": 1 },
+      { "id": "creosote", "weight": 3, "qty": 1 },
+      { "id": "mesquite-pod", "weight": 3, "qty": 1 },
+      { "id": "mistletoe-berry", "weight": 2, "qty": 1 },
+      { "id": "seep-water", "weight": 3, "qty": 1 },
+      { "id": "stone", "weight": 2, "qty": 1 },
+      { "id": "plastic-sheet", "weight": 1, "qty": 1 },
+      { "id": "container", "weight": 2, "qty": 1 },
+      { "id": "tubing", "weight": 1, "qty": 1 },
+      { "id": "fuel", "weight": 2, "qty": 1 },
+      { "id": "nothing", "weight": 2, "qty": 0 }
+    ]
+  },
+  {
+    "id": "rocky-ridge",
+    "name": "Rocky Ridge",
+    "travelHours": 5,
+    "searchHours": 2,
+    "exposure": 1.15,
+    "blurb": "The high ground. Better caches, worse falls, and a long walk back if you have misjudged the sun.",
+    "arriveLog": "The ridge puts the wreck in perspective: a white splinter, easy to miss. Anything searching from the air would miss it too, without smoke.",
+    "loot": [
+      { "id": "fuel", "weight": 5, "qty": 1 },
+      { "id": "fuel", "weight": 2, "qty": 2 },
+      { "id": "first-aid", "weight": 3, "qty": 1 },
+      { "id": "ration", "weight": 3, "qty": 1 },
+      { "id": "plastic-sheet", "weight": 2, "qty": 1 },
+      { "id": "tubing", "weight": 2, "qty": 1 },
+      { "id": "container", "weight": 2, "qty": 1 },
+      { "id": "water", "weight": 2, "qty": 1 },
+      { "id": "cloth", "weight": 1, "qty": 1 },
+      { "id": "field-manual", "weight": 1, "qty": 1 },
+      { "id": "creosote", "weight": 2, "qty": 1 },
+      { "id": "mesquite-pod", "weight": 2, "qty": 1 },
+      { "id": "nothing", "weight": 2, "qty": 0 }
+    ]
+  }
+]

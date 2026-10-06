@@ -1,0 +1,7 @@
+{
+  "perDay": 10,
+  "perDiscovery": 25,
+  "perSchematic": 40,
+  "rescueBonus": 120,
+  "journalScale": 100
+}

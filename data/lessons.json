@@ -1,0 +1,37 @@
+{
+  "heat": {
+    "label": "Heat stroke",
+    "card": "The sun finished what the walk started.",
+    "lesson": "Heat stroke does not negotiate. Midday travel spends health by the hour. Shade, and a shelter dug before you need it, are the only answers that count."
+  },
+  "cold": {
+    "label": "Exposure",
+    "card": "The night dropped further than the body could follow.",
+    "lesson": "Desert night is a second emergency. A shelter or a fire pit keeps sleep from becoming hypothermia. The wreck alone is only a partial windbreak."
+  },
+  "dehydration": {
+    "label": "Dehydration",
+    "card": "Thirst took the last of the hours.",
+    "lesson": "Once hydration is empty, thirst kills in about two days, and faster if you are still in the sun. Stills, shade, and not walking at midday are the whole craft. One still is not enough."
+  },
+  "starvation": {
+    "label": "Starvation",
+    "card": "The calories ran out before the rescue did.",
+    "lesson": "Hunger is the slowest killer here, about four days once the meter is empty, and it still wins. Prickly pear, mesquite, and rations are a calendar. Count them."
+  },
+  "injury": {
+    "label": "Injury",
+    "card": "A wound kept its own clock, and it ran out.",
+    "lesson": "Bites, stings, and cuts are not instant. They are hours of health leaving. A first aid kit spends those hours back. Untreated, they stack with thirst until you cannot pay."
+  },
+  "sickness": {
+    "label": "Sickness",
+    "card": "Something you put in your mouth spent the water you had left.",
+    "lesson": "A bad plant or dirty seep can cost more water than a day's walk. Unknown things get a taste or a refusal, not a meal. The journal is where the answer has to live."
+  },
+  "rescued": {
+    "label": "Recovered alive",
+    "card": "They found the smoke, or they found the grid. Either way they found you.",
+    "lesson": ""
+  }
+}

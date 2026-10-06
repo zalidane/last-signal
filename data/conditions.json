@@ -1,0 +1,65 @@
+{
+  "vomiting": {
+    "name": "Vomiting",
+    "hydrationPerHour": 3.5,
+    "healthPerHour": 0.35,
+    "budgetFlag": "gut",
+    "threat": "sickness"
+  },
+  "diarrhea": {
+    "name": "Diarrhea",
+    "hydrationPerHour": 2.5,
+    "healthPerHour": 0.2,
+    "budgetFlag": "gut",
+    "threat": "sickness"
+  },
+  "nausea": {
+    "name": "Nausea",
+    "hydrationPerHour": 0.8,
+    "healthPerHour": 0,
+    "budgetFlag": "gut",
+    "threat": "sickness"
+  },
+  "stomach": {
+    "name": "Stomach cramps",
+    "hydrationPerHour": 1.3,
+    "healthPerHour": 0.1,
+    "budgetFlag": "gut",
+    "threat": "sickness"
+  },
+  "snakebite": {
+    "name": "Snakebite",
+    "hydrationPerHour": 0.35,
+    "healthPerHour": 2,
+    "budgetFlag": "injured",
+    "threat": "injury"
+  },
+  "scorpion": {
+    "name": "Scorpion sting",
+    "hydrationPerHour": 0.2,
+    "healthPerHour": 0.75,
+    "budgetFlag": "injured",
+    "threat": "injury"
+  },
+  "laceration": {
+    "name": "Laceration",
+    "hydrationPerHour": 0.1,
+    "healthPerHour": 0.7,
+    "budgetFlag": "injured",
+    "threat": "injury"
+  },
+  "concussion": {
+    "name": "Concussion",
+    "hydrationPerHour": 0,
+    "healthPerHour": 0.15,
+    "budgetFlag": "injured",
+    "threat": "injury"
+  },
+  "sunburn": {
+    "name": "Sunburn",
+    "hydrationPerHour": 0.35,
+    "healthPerHour": 0.2,
+    "budgetFlag": "sunburn",
+    "threat": "injury"
+  }
+}

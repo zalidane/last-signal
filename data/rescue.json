@@ -1,0 +1,6 @@
+{
+  "rollMin": 18,
+  "rollMax": 25,
+  "minDay": 11,
+  "fuelPerDawn": 1
+}

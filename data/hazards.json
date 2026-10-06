@@ -1,0 +1,55 @@
+[
+  {
+    "id": "thorns",
+    "name": "Thorns and spines",
+    "on": ["search", "travel"],
+    "chance": { "camp": 0.04, "wreckage-field": 0.1, "dry-wash": 0.16, "rocky-ridge": 0.14 },
+    "effect": { "health": -4, "fatigue": 3, "morale": -1 },
+    "log": "A spine finds your hand. The cut is small, rude, and exactly where you will use it.",
+    "journal": "Thorns, cactus spines, and torn aluminum all open the skin. They are not dramatic. They are how an infection starts if you are careless in the wash."
+  },
+  {
+    "id": "snakebite",
+    "name": "Snakebite",
+    "on": ["search", "travel"],
+    "chance": { "camp": 0.01, "wreckage-field": 0.03, "dry-wash": 0.1, "rocky-ridge": 0.12 },
+    "bandChance": { "cold": 0.45, "mild": 1.15, "warm": 1, "hot": 0.85, "extreme": 0.55 },
+    "effect": { "health": -8, "morale": -8, "fatigue": 6 },
+    "condition": { "id": "snakebite", "hours": 14 },
+    "log": "A buzz, then a punch in the calf. The snake is already gone. The bite stays.",
+    "journal": "Snakes own the shade under rock, especially morning and dusk. A bite is a slow emergency. Treat it with a kit or lose the next day to the venom's clock."
+  },
+  {
+    "id": "scorpion",
+    "name": "Scorpion sting",
+    "on": ["search", "travel"],
+    "chance": { "camp": 0.02, "wreckage-field": 0.04, "dry-wash": 0.08, "rocky-ridge": 0.11 },
+    "bandChance": { "cold": 1.7, "mild": 1.1, "warm": 0.8, "hot": 0.7, "extreme": 0.6 },
+    "effect": { "health": -6, "morale": -5, "fatigue": 10 },
+    "condition": { "id": "scorpion", "hours": 12 },
+    "log": "You move a stone and the stone disagrees. The sting is a hot nail in the wrist.",
+    "journal": "Scorpions shelter in shoes, sleeves, and under rocks, especially at night. A sting ruins sleep and steals hours. Shake out cloth. A fire at camp keeps most of them off you."
+  },
+  {
+    "id": "sunburn",
+    "name": "Sunburn",
+    "on": ["travel", "search-zone"],
+    "bands": ["hot", "extreme"],
+    "chance": { "camp": 0, "wreckage-field": 0.18, "dry-wash": 0.2, "rocky-ridge": 0.28 },
+    "condition": { "id": "sunburn", "hours": 28 },
+    "effect": { "morale": -3 },
+    "log": "The sun finds the back of your neck and writes on it. You will feel this tomorrow.",
+    "journal": "Open travel in the hot hours burns skin fast. Sunburn shortens the next day and makes heat worse. Shade, a shelter, and a creosote poultice are the answers. Heroics are not."
+  },
+  {
+    "id": "fall",
+    "name": "A bad step",
+    "on": ["travel", "search"],
+    "chance": { "camp": 0, "wreckage-field": 0.02, "dry-wash": 0.04, "rocky-ridge": 0.12 },
+    "effect": { "health": -10, "fatigue": 8, "morale": -4 },
+    "condition": { "id": "laceration", "hours": 12 },
+    "sprainHours": 36,
+    "log": "A stone rolls under your boot. You go down hard.",
+    "journal": "Loose stone cuts and sprains. The ridge charges the highest toll. Go up with water, daylight that is not noon, and enough health to pay for a mistake."
+  }
+]

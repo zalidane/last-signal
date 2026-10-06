@@ -1,0 +1,13 @@
+{
+  "id": "sonoran",
+  "name": "Sonoran scrub",
+  "hours": [
+    { "from": 0, "to": 5, "id": "cold", "name": "Night", "airTempC": 11 },
+    { "from": 5, "to": 8, "id": "mild", "name": "Dawn", "airTempC": 23 },
+    { "from": 8, "to": 10, "id": "warm", "name": "Morning", "airTempC": 35 },
+    { "from": 10, "to": 16, "id": "extreme", "name": "Midday", "airTempC": 53 },
+    { "from": 16, "to": 19, "id": "hot", "name": "Afternoon", "airTempC": 41 },
+    { "from": 19, "to": 22, "id": "mild", "name": "Dusk", "airTempC": 28 },
+    { "from": 22, "to": 24, "id": "cold", "name": "Night", "airTempC": 14 }
+  ]
+}

@@ -1,0 +1,61 @@
+[
+  {
+    "id": "basic-shelter",
+    "name": "Basic shelter",
+    "tier": 1,
+    "tierName": "Basic Shelter",
+    "hours": 4,
+    "where": ["camp"],
+    "requires": { "cloth": 2, "debris": 3 },
+    "grants": "shelter",
+    "log": "You scrape a trench in the lee of the fuselage and roof it with cloth and panel. Four hours of sweat. The hole is ugly. At noon it will feel like mercy.",
+    "already": "The shelter is already dug."
+  },
+  {
+    "id": "fire-pit",
+    "name": "Fire pit",
+    "tier": 2,
+    "tierName": "Fire Pit",
+    "hours": 2,
+    "where": ["camp"],
+    "requires": { "stone": 4, "fuel": 1 },
+    "grants": "firePit",
+    "log": "A ring of stones and a careful flame. It will cook, take the edge off the night, and keep small hunters out of the blankets.",
+    "already": "The fire pit is already built."
+  },
+  {
+    "id": "solar-still",
+    "name": "Solar still",
+    "tier": 3,
+    "tierName": "Water Collection",
+    "hours": 3,
+    "where": ["camp", "dry-wash"],
+    "requires": { "plastic-sheet": 1, "container": 1, "tubing": 1 },
+    "grants": "solarStill",
+    "schematic": "solar-still",
+    "max": 4,
+    "log": "Plastic over a pit, a cup at the bottom, tubing so you can drink without breaking the seal. By dawn it will have sweated a little water.",
+    "washLog": "You cut the still into the lowest sand of the wash. The ground here is less unwilling. It should give more than a still beside the wreck.",
+    "unknownLabel": "Rig a water still",
+    "unknownDetail": "You have plastic, a container, and tubing. You can spend three hours finding out if they belong together.",
+    "knownLabel": "Build a solar still"
+  },
+  {
+    "id": "signal-fire",
+    "name": "Signal fire",
+    "tier": 5,
+    "tierName": "Signal Station",
+    "hours": 1,
+    "where": ["camp"],
+    "requires": { "fuel": 2 },
+    "requiresFlag": "firePit",
+    "grants": "signalFire",
+    "log": "You build the fire into a column of smoke. It will eat a bundle of fuel at every dawn. If a search is out there, this is how they choose your square.",
+    "already": "The signal fire is already burning.",
+    "relight": {
+      "hours": 1,
+      "requires": { "fuel": 1 },
+      "log": "You feed the beacon until the smoke stands up again."
+    }
+  }
+]

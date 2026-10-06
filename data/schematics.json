@@ -1,0 +1,8 @@
+[
+  {
+    "id": "solar-still",
+    "name": "Solar still",
+    "requires": { "plastic-sheet": 1, "container": 1, "tubing": 1 },
+    "text": "Plastic sheet + container + tubing, set in a pit. Best in a low wash. About 0.5 to 1 L each dawn, a little more in the wash. Plan on three for one person."
+  }
+]

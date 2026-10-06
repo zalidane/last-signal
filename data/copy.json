@@ -1,0 +1,32 @@
+{
+  "title": "LAST SIGNAL",
+  "tagline": "The desert keeps what you learn.",
+  "standingOrders": [
+    "Work hours reset at dawn. Thirst, hunger, pain, and exhaustion cut them so you can see the spiral before it closes.",
+    "Midday sun kills in hours. Thirst, once empty, takes about two days. Hunger takes about four. Nothing empty kills you in a single tick.",
+    "Rest and sleep in shade or a shelter. Walking in the heat can burn two or three liters. A solar still makes half a liter to one liter a day. You want several.",
+    "Unknown plants can be eaten, ignored, or tested. The journal keeps the answer and brings it back next run. Your body does not.",
+    "Rescue has a hidden day between 18 and 25. A lit signal fire pulls that day earlier. Not every crash can be won."
+  ],
+  "opening": [
+    "You come to on hot metal. The fuselage has opened like a seed pod. One wing is a black spine in the gravel. You are alive, which is a temporary fact.",
+    "There is no tower in your ear and no date on the rescue. If you die, the only thing you can send ahead is what you learned."
+  ],
+  "dawnLines": [
+    "The metal ticks as the sun finds it.",
+    "Dawn is a gray mercy that will not last.",
+    "The horizon is a blade. Nothing on it is coming yet.",
+    "You wake with sand in your teeth and the same job as yesterday.",
+    "The sky is empty and very large.",
+    "Night lets go of the camp one degree at a time."
+  ],
+  "schematic": {
+    "id": "solar-still",
+    "name": "Solar still",
+    "text": "A pit in low ground, a container at the bottom, a plastic sheet weighted so it drips, and tubing to drink without lifting the seal. One still yields about 0.5 to 1 liter a day. A wash placement yields more. One person needs about three."
+  },
+  "nothingLog": "Dust, rivets, and nothing you can carry.",
+  "knownFindLog": "You know this one. {name}. The journal already argued with your hands.",
+  "journalPreface": "Stats do not carry over. This does. Every entry was paid for by somebody, once.",
+  "classified": "Rescue window classified"
+}

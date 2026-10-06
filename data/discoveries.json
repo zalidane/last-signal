@@ -1,0 +1,213 @@
+[
+  {
+    "id": "barrel-cactus",
+    "itemId": "barrel-cactus",
+    "name": "Barrel cactus",
+    "unknownName": "Ribbed green cactus",
+    "unknownBlurb": "The pulp looks wet. Thirst wants a vote.",
+    "summary": "A trap. The pulp sets off vomiting and diarrhea and spends more water than it gives.",
+    "safe": false,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["ignore"],
+    "eat": {
+      "hunger": 4,
+      "hydration": 10,
+      "morale": -8,
+      "addConditions": [
+        { "id": "vomiting", "hours": 10 },
+        { "id": "diarrhea", "hours": 18 }
+      ],
+      "learn": true,
+      "log": "It tastes like green water. Then your stomach turns inside out, and keeps turning.",
+      "journal": "Barrel cactus is not a canteen. The pulp causes vomiting and diarrhea that accelerate dehydration. Do not eat it."
+    },
+    "experiment": {
+      "hours": 1,
+      "hydration": -4,
+      "health": -1,
+      "morale": -2,
+      "addConditions": [{ "id": "nausea", "hours": 4 }],
+      "learn": true,
+      "log": "You taste a finger of pulp and spit. Your mouth goes dry anyway. This is not water.",
+      "journal": "A taste of barrel cactus numbs the tongue and turns the stomach. It is a famous trap. Leave the ribs alone."
+    }
+  },
+  {
+    "id": "prickly-pear",
+    "itemId": "prickly-pear",
+    "name": "Prickly pear",
+    "unknownName": "Spiny flat pad",
+    "unknownBlurb": "A cactus pad. Food, maybe, if you can get past the hair-fine spines.",
+    "summary": "Safe food once the spines are singed off. A little moisture. More than two pads in a day cramps the gut.",
+    "safe": true,
+    "countsAs": "pear",
+    "overeatAt": 3,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["eat", "prepare", "ignore"],
+    "eat": {
+      "hunger": 14,
+      "hydration": 4,
+      "health": -1,
+      "learn": true,
+      "log": "You eat around the worst of the spines. It is food, barely, and it bites back on the way down.",
+      "journal": "Prickly pear pads are food. Singe the glochids and peel them. Raw, they are stingy calories and a sip of moisture, and the spines still find you."
+    },
+    "experiment": {
+      "hours": 1,
+      "hunger": 16,
+      "hydration": 6,
+      "learn": true,
+      "log": "You burn the fine spines off in a careful pass and peel the pad. Sweet, green, and actually food.",
+      "journal": "Prickly pear is safe once you singe off the glochids and peel the pad. It gives calories and a little water. More than two in a day upsets the stomach."
+    },
+    "prepare": {
+      "hours": 1,
+      "hunger": 24,
+      "hydration": 8,
+      "morale": 2,
+      "log": "You peel a pad properly. It is a small meal and a little moisture.",
+      "fireBonus": {
+        "hunger": 8,
+        "hydration": 3,
+        "morale": 3,
+        "log": "Over the fire pit the pad softens. It eats like a real meal."
+      }
+    },
+    "overeat": {
+      "addConditions": [{ "id": "stomach", "hours": 10 }],
+      "morale": -3,
+      "log": "That was one pad too many. Your gut cramps around the oxalate."
+    }
+  },
+  {
+    "id": "mistletoe-berry",
+    "itemId": "mistletoe-berry",
+    "name": "Desert mistletoe berries",
+    "unknownName": "Pale berries",
+    "unknownBlurb": "Translucent berries. They look like the first kind thing you have seen.",
+    "summary": "Poisonous. Nausea, vomiting, and a real bite out of your health. Not food.",
+    "safe": false,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["ignore"],
+    "eat": {
+      "hunger": 6,
+      "health": -14,
+      "morale": -6,
+      "addConditions": [{ "id": "vomiting", "hours": 8 }],
+      "learn": true,
+      "log": "The berries burst sweet, then wrong. Your pulse climbs and you lose what water you had in you.",
+      "journal": "Desert mistletoe berries are poisonous. They look edible. They are not. Vomiting follows, and the health loss is not subtle."
+    },
+    "experiment": {
+      "hours": 1,
+      "health": -4,
+      "hydration": -2,
+      "addConditions": [{ "id": "nausea", "hours": 5 }],
+      "learn": true,
+      "log": "One berry, crushed, tastes like cough syrup and metal. You spit until your tongue behaves.",
+      "journal": "A single desert mistletoe berry is enough to prove the cluster. Poison. Do not eat them, however hungry the color looks."
+    }
+  },
+  {
+    "id": "creosote",
+    "itemId": "creosote",
+    "name": "Creosote sprigs",
+    "unknownName": "Resinous leaves",
+    "unknownBlurb": "They smell like tar and rain. Medicine, tea, or a mistake.",
+    "summary": "Not food. A cooled poultice calms sunburn. Swallowing the leaves makes you sick.",
+    "safe": false,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["poultice", "ignore"],
+    "eat": {
+      "hunger": 2,
+      "health": -7,
+      "morale": -4,
+      "addConditions": [{ "id": "nausea", "hours": 6 }],
+      "learn": true,
+      "log": "You chew a sprig. It is bitter enough to feel like a punishment, and your stomach agrees.",
+      "journal": "Creosote is not food. The leaves are bitter and nauseating if you swallow them. On the skin, a poultice eases sunburn."
+    },
+    "experiment": {
+      "hours": 1,
+      "health": -1,
+      "learn": true,
+      "log": "You crush the leaves. The smell is medicinal, not culinary. A poultice might calm a burn. A tea would be a mistake.",
+      "journal": "Creosote leaves make a poultice for sunburn. Do not drink them and do not call them a meal. The smell is the clue: medicine, not water."
+    },
+    "poultice": {
+      "clears": "sunburn",
+      "morale": 2,
+      "log": "You mash creosote into a bitter paste and lay it on the burn. The sting goes down a notch."
+    }
+  },
+  {
+    "id": "mesquite-pod",
+    "itemId": "mesquite-pod",
+    "name": "Mesquite pods",
+    "unknownName": "Dry tan pods",
+    "unknownBlurb": "Hard pods from a thorn tree. They might be empty. They might not.",
+    "summary": "The sweet pith is calories. Pounded or chewed long, they are a real meal. The fiber alone is a poor one.",
+    "safe": true,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["eat", "prepare", "ignore"],
+    "eat": {
+      "hunger": 12,
+      "morale": 1,
+      "learn": true,
+      "log": "You chew until your jaw aches. There is a little sugar in the fiber, and a lot of fiber.",
+      "journal": "Mesquite pods are food if you work them. The sweet pith is the calories. Swallowed whole they are mostly string."
+    },
+    "experiment": {
+      "hours": 1,
+      "hunger": 20,
+      "morale": 2,
+      "learn": true,
+      "log": "You pound the pods between two stones. The pith tastes like molasses sawdust. It is, unmistakably, lunch.",
+      "journal": "Pound mesquite pods and eat the sweet pith. They keep, they travel, and they are one of the few honest calories in the scrub."
+    },
+    "prepare": {
+      "hours": 1,
+      "hunger": 28,
+      "morale": 3,
+      "log": "You pound the pods to pith and leave the worst of the fiber in the gravel.",
+      "fireBonus": {
+        "hunger": 4,
+        "morale": 2,
+        "log": "Warmed over the coals, the pith almost tastes kind."
+      }
+    }
+  },
+  {
+    "id": "seep-water",
+    "itemId": "seep-water",
+    "name": "Seep water",
+    "unknownName": "Murky seep",
+    "unknownBlurb": "Water that has been lying in the wash. Your thirst does not care about the color.",
+    "summary": "Contaminated. Boil it on the fire pit and it becomes half a liter of real water. Drunk raw, it hydrates you and then the diarrhea spends it.",
+    "safe": false,
+    "unknownActions": ["eat", "ignore", "experiment"],
+    "knownActions": ["boil", "eat", "ignore"],
+    "eat": {
+      "hydration": 18,
+      "morale": -2,
+      "addConditions": [{ "id": "diarrhea", "hours": 14 }],
+      "learn": true,
+      "log": "You drink the seep. For an hour you feel saved. Then your gut starts giving the water back.",
+      "journal": "Wash seep water is contaminated. Drunk raw it loans you hydration and then collects, with interest, as diarrhea. Boil it on a fire before it touches your mouth."
+    },
+    "experiment": {
+      "hours": 1,
+      "hydration": -2,
+      "addConditions": [{ "id": "nausea", "hours": 3 }],
+      "learn": true,
+      "log": "A sip tastes like metal and animals. You spit. This water needs a fire before it is water.",
+      "journal": "Seep water must be boiled. A taste is enough to know it is dirty. With a fire pit it becomes drinkable. Without one it is a trap with a wet face."
+    },
+    "boil": {
+      "hours": 1,
+      "requiresFire": true,
+      "yieldsWater": 0.5,
+      "log": "You boil the seep until it throws steam, then cool it. Half a liter, and this time it is yours."
+    }
+  }
+]

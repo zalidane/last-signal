@@ -1,0 +1,146 @@
+{
+  "pointsPerLiter": 25,
+  "drinkLiters": 0.5,
+  "meters": {
+    "health": { "warn": 55, "danger": 30 },
+    "hunger": { "warn": 35, "danger": 18 },
+    "hydration": { "warn": 40, "danger": 20 },
+    "fatigue": { "warn": 60, "danger": 85, "highIsBad": true },
+    "morale": { "warn": 35, "danger": 15 }
+  },
+  "bodyTemp": {
+    "startC": 37,
+    "minC": 33.2,
+    "maxC": 42,
+    "approach": 0.42,
+    "comfortMinC": 36.3,
+    "comfortMaxC": 37.9,
+    "heatMildC": 39,
+    "heatSevereC": 40,
+    "heatCriticalC": 40.7,
+    "coldMildC": 35.7,
+    "coldSevereC": 34.9,
+    "coldBaseC": 34.35,
+    "coldAnchorC": 12,
+    "coldSlope": 0.19,
+    "coldCapC": 37.3,
+    "heatBaseC": 36.85,
+    "heatAnchorC": 33,
+    "heatSlope": 0.185,
+    "heatFloorC": 36.2,
+    "dehydratedHeatBonusC": 0.45,
+    "dehydratedHeatBelow": 25
+  },
+  "heatHealthPerHour": { "mild": 4, "severe": 8, "critical": 14 },
+  "coldHealthPerHour": { "mild": 4, "severe": 9 },
+  "emptyHydrationHealthPerHour": 2.1,
+  "emptyHungerHealthPerHour": 1.05,
+  "activities": {
+    "sleep": { "hunger": 0.7, "hydration": 0.85, "fatigue": -11, "morale": 0.4, "exertionC": 0 },
+    "rest": { "hunger": 1.05, "hydration": 1.45, "fatigue": -7, "morale": 0.15, "exertionC": -0.15 },
+    "camp": { "hunger": 2.1, "hydration": 2.6, "fatigue": 3.5, "morale": -0.05, "exertionC": 0.35 },
+    "build": { "hunger": 3.3, "hydration": 7.2, "fatigue": 6.5, "morale": -0.1, "exertionC": 0.85 },
+    "search": { "hunger": 2.7, "hydration": 4.1, "fatigue": 4.5, "morale": -0.05, "exertionC": 0.55 },
+    "travel": { "hunger": 3.4, "hydration": 5.6, "fatigue": 5.5, "morale": -0.15, "exertionC": 1.25 }
+  },
+  "bandHydrationMultiplier": {
+    "cold": 0.5,
+    "mild": 0.72,
+    "warm": 1.15,
+    "hot": 1.7,
+    "extreme": 2.55
+  },
+  "contextHydrationMultiplier": {
+    "travel": 1,
+    "search-zone": 0.95,
+    "search-camp": 0.68,
+    "camp": 0.66,
+    "build": 0.72,
+    "rest-shade": 0.4,
+    "rest-shelter": 0.32,
+    "sleep-open": 0.85,
+    "sleep-camp": 0.6,
+    "sleep-shelter": 0.45
+  },
+  "felt": {
+    "shadeDeltaC": -14,
+    "shelterDayDeltaC": -19,
+    "shelterNightDeltaC": 10,
+    "fireNightDeltaC": 12,
+    "wreckNightDeltaC": 5,
+    "wreckShadeDeltaC": -11,
+    "zoneSearchShadeC": -6
+  },
+  "actionBudget": {
+    "base": 12,
+    "minimum": 4,
+    "rules": [
+      {
+        "meter": "hydration",
+        "below": 50,
+        "delta": -1,
+        "note": "Thirst is shortening the day."
+      },
+      {
+        "meter": "hydration",
+        "below": 30,
+        "delta": -2,
+        "note": "Your mouth is dry. Work is slower."
+      },
+      {
+        "meter": "hydration",
+        "below": 15,
+        "delta": -2,
+        "note": "Dehydration is stealing hours."
+      },
+      {
+        "meter": "hunger",
+        "below": 40,
+        "delta": -1,
+        "note": "Hunger is making every task heavier."
+      },
+      {
+        "meter": "hunger",
+        "below": 20,
+        "delta": -2,
+        "note": "You are weak from lack of food."
+      },
+      {
+        "meter": "fatigue",
+        "above": 60,
+        "delta": -2,
+        "note": "Exhaustion is cutting the day short."
+      },
+      {
+        "meter": "fatigue",
+        "above": 85,
+        "delta": -2,
+        "note": "You can barely keep your eyes open."
+      },
+      {
+        "meter": "morale",
+        "below": 15,
+        "delta": -1,
+        "note": "Despair is slowing your hands."
+      },
+      {
+        "flag": "injured",
+        "delta": -2,
+        "note": "Pain is limiting what you can do."
+      },
+      {
+        "flag": "sunburn",
+        "delta": -1,
+        "note": "Sunburn makes every movement sting."
+      },
+      {
+        "flag": "gut",
+        "delta": -2,
+        "note": "Your stomach will not allow a full day."
+      }
+    ]
+  },
+  "ration": { "hunger": 36, "morale": 3, "warmedHunger": 6, "warmedMorale": 5 },
+  "restHours": 2,
+  "sandstormHydrationBonus": 1.6
+}

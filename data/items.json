@@ -1,0 +1,124 @@
+[
+  {
+    "id": "water",
+    "name": "Water",
+    "category": "water",
+    "unit": "L",
+    "blurb": "Clean enough to drink. Every liter is a piece of tomorrow.",
+    "foundLog": "You shake a bottle and hear a slosh. Clean water."
+  },
+  {
+    "id": "ration",
+    "name": "Ration pack",
+    "category": "food",
+    "blurb": "Crash rations. Dry, salty, and more useful than pride.",
+    "foundLog": "A ration pack, foil still intact, warm from the sun."
+  },
+  {
+    "id": "cloth",
+    "name": "Cloth",
+    "category": "material",
+    "blurb": "Seat fabric and a shirt you are not wearing. Shelter wants it.",
+    "foundLog": "You cut free a length of cabin cloth."
+  },
+  {
+    "id": "debris",
+    "name": "Debris",
+    "category": "material",
+    "blurb": "Struts, panel, and a tray. Enough to roof a scrape in the ground.",
+    "foundLog": "You drag a usable piece of debris out of the gravel."
+  },
+  {
+    "id": "stone",
+    "name": "Stone",
+    "category": "material",
+    "blurb": "Rocks the size of a fist. A fire pit is a ring of these.",
+    "foundLog": "You stack stones that will hold a fire."
+  },
+  {
+    "id": "fuel",
+    "name": "Fuel bundle",
+    "category": "material",
+    "blurb": "Cushion foam, a tire strip, dry creosote sticks. One bundle feeds a signal fire for one night.",
+    "foundLog": "You salvage a bundle of things that will burn."
+  },
+  {
+    "id": "plastic-sheet",
+    "name": "Plastic sheet",
+    "category": "material",
+    "blurb": "Clear plastic from a window shade. A still needs a sheet that can sweat.",
+    "foundLog": "A sheet of plastic, cracked at one corner and otherwise perfect."
+  },
+  {
+    "id": "container",
+    "name": "Container",
+    "category": "material",
+    "blurb": "A cup, a bottle, a dented tin. Something to catch water under plastic.",
+    "foundLog": "You pocket a container that will hold a cup of water."
+  },
+  {
+    "id": "tubing",
+    "name": "Tubing",
+    "category": "material",
+    "blurb": "Oxygen line, still flexible. A still drinks through this without breaking the seal.",
+    "foundLog": "You coil a length of tubing."
+  },
+  {
+    "id": "first-aid",
+    "name": "First aid kit",
+    "category": "medical",
+    "blurb": "Gauze, a wrap, antiseptic that stings. It stops a bite from becoming the whole day.",
+    "foundLog": "A first aid kit, latch gritty, contents still there."
+  },
+  {
+    "id": "field-manual",
+    "name": "Torn field manual",
+    "category": "tool",
+    "blurb": "One charred page. A pit, a sheet of plastic, a cup, a tube.",
+    "foundLog": "A charred page. Someone drew a still: plastic, a cup, a tube.",
+    "teachesSchematic": "solar-still"
+  },
+  {
+    "id": "barrel-cactus",
+    "name": "Barrel cactus",
+    "category": "discovery",
+    "blurb": "A ribbed green cactus. It looks like water.",
+    "foundLog": "A barrel cactus, ribs swollen, as if it were saving something for you."
+  },
+  {
+    "id": "prickly-pear",
+    "name": "Prickly pear",
+    "category": "discovery",
+    "blurb": "Flat green pads with fine spines that want your fingers.",
+    "foundLog": "Prickly pear pads, bright and armed."
+  },
+  {
+    "id": "mistletoe-berry",
+    "name": "Desert mistletoe berries",
+    "category": "discovery",
+    "blurb": "Translucent berries on a parasite shrub. They look like fruit.",
+    "foundLog": "A cluster of pale berries on a shrub latched to a palo verde."
+  },
+  {
+    "id": "creosote",
+    "name": "Creosote sprigs",
+    "category": "discovery",
+    "blurb": "Small resinous leaves. After rain they smell like the sky. This is not rain.",
+    "foundLog": "Creosote sprigs, sticky and sharp-smelling."
+  },
+  {
+    "id": "mesquite-pod",
+    "name": "Mesquite pods",
+    "category": "discovery",
+    "blurb": "Dry tan pods. Something sweet is packed in the fiber.",
+    "foundLog": "You strip a handful of dry mesquite pods."
+  },
+  {
+    "id": "seep-water",
+    "name": "Seep water",
+    "category": "discovery",
+    "unit": "cache",
+    "blurb": "A film of water in a low spot. It did not get there cleanly.",
+    "foundLog": "Water darkens the sand in a low spot. You fill a container with the seep."
+  }
+]
