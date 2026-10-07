@@ -7,8 +7,11 @@ import { createRun } from "./setup.ts";
 import { projectView, type UiFlags } from "./view.ts";
 
 export const SESSION_KEY = "last-signal.session.v1";
-/** Format 2 (game v3): work-hour budget removed; pending sightings and meat spoilage added. */
-export const SESSION_VERSION = 2;
+/**
+ * Format 2 (game v3): work-hour budget removed; pending sightings and meat spoilage added.
+ * Format 3 (game v4): component crafting; crafted gear builds and torch burns.
+ */
+export const SESSION_VERSION = 3;
 export const OLD_SAVE_NOTICE =
   "Your last run was saved by an older version of the game and could not be resumed. The journal came through intact.";
 
@@ -21,7 +24,7 @@ interface SessionFile {
 
 function isCurrentState(state: RunState): boolean {
   const record = state as unknown as Record<string, unknown>;
-  return "pending" in record && "spoil" in record && !("laborHours" in record);
+  return "pending" in record && "spoil" in record && "gear" in record && !("laborHours" in record);
 }
 
 export class Game {
@@ -57,6 +60,11 @@ export class Game {
       this.persist();
       return;
     }
+    if (command.type === "close-craft") {
+      this.ui = { ...this.ui, craft: null };
+      this.persist();
+      return;
+    }
     if (command.type === "abandon") {
       this.state = null;
       this.ui = { journalOpen: false, itemId: null };
@@ -74,10 +82,23 @@ export class Game {
       this.persist();
       return;
     }
+    if (command.type === "open-craft") {
+      if (this.state.pending || !this.data.toolById.has(command.toolId)) return;
+      this.ui = { ...this.ui, itemId: null, craft: { toolId: command.toolId, picks: {} } };
+      this.persist();
+      return;
+    }
+    if (command.type === "craft-pick") {
+      if (!this.ui.craft) return;
+      this.ui = { ...this.ui, craft: { ...this.ui.craft, picks: { ...this.ui.craft.picks, [command.slot]: command.materialId } } };
+      this.persist();
+      return;
+    }
     const result = applyCommand(this.state, this.journal, command, this.data, this.rng);
     this.state = result.state;
     this.journal = result.journal;
     if (command.type === "item") this.ui = { ...this.ui, itemId: null };
+    if (command.type === "craft") this.ui = { ...this.ui, craft: null };
     this.persist();
   }
 

@@ -424,6 +424,8 @@ export interface AnimalDef {
   failLog: string;
   escapeLog: string;
   journal: { id: string; name: string; text: string };
+  /** Extra things a kill leaves you, e.g. snake sinew for bindings. */
+  drops?: { item: string; qty: number; log: string }[];
 }
 
 export interface WeaponDef {
@@ -432,6 +434,77 @@ export interface WeaponDef {
   tier: number;
   kill: Record<string, number>;
   failStrike: number;
+  /** Built from components: material modifiers apply and it can break on a failed kill. */
+  crafted?: boolean;
+  /** Effective weapons only: chance it comes apart when a kill fails. */
+  breakChance?: number;
+  /** Effective weapons only: the build that made it. */
+  build?: GearBuild;
+}
+
+export type SlotId = "handle" | "end" | "binding";
+export type EndKind = "sharp" | "blunt" | "flammable";
+
+export interface MaterialMods {
+  /** Added to kill odds for weapons. */
+  kill: number;
+  /** Added to the chance a crafted weapon breaks on a failed kill. */
+  breakOnFail: number;
+  /** Flammable ends: base burns for a torch. */
+  burns?: number;
+  /** Added to a torch's burns. */
+  torchBurns?: number;
+}
+
+export interface MaterialDef {
+  id: string;
+  slot: SlotId;
+  /** Handles: wood | metal | plastic. Ends: sharp | blunt | flammable. Bindings: their own kind. */
+  kind: string;
+  length?: "short" | "long";
+  name: string;
+  short: string;
+  consumes: Record<string, number>;
+  extraHours?: number;
+  mods: MaterialMods;
+  breakLog?: string;
+  note: { name: string; text: string };
+}
+
+export interface ToolDef {
+  id: string;
+  name: string;
+  item: string;
+  weapon?: string;
+  hours: number;
+  where: string[];
+  maxCarry: number;
+  handle: {
+    lengths: ("short" | "long")[];
+    label: string;
+    kindPenalty?: Record<string, number>;
+    kindNote?: Record<string, string>;
+  };
+  end: EndKind;
+  lengthNote?: string;
+  log: string;
+  pattern: { name: string; text: string };
+}
+
+export interface CraftingConfig {
+  slots: { id: SlotId; label: string }[];
+  maxBreak: number;
+  autoPick: { breakWeight: number; hourWeight: number };
+  materials: MaterialDef[];
+  tools: ToolDef[];
+  slotWords: Record<EndKind, string>;
+}
+
+/** What a crafted tool in the pack is made of. */
+export interface GearBuild {
+  handle: string;
+  end: string;
+  binding: string;
 }
 
 export interface MeatDef {
@@ -495,6 +568,9 @@ export interface GameData {
   schematicById: Map<string, SchematicDef>;
   wildlife: WildlifeConfig;
   animalById: Map<string, AnimalDef>;
+  crafting: CraftingConfig;
+  materialById: Map<string, MaterialDef>;
+  toolById: Map<string, ToolDef>;
 }
 
 export interface ConditionInstance {
@@ -596,6 +672,8 @@ export interface RunState {
   pending: Sighting | null;
   /** Hours until uncooked meat in the pack turns. Keyed by item id. */
   spoil: Record<string, number>;
+  /** Crafted weapons in the pack and what they are made of. Keyed by item id. */
+  gear: Record<string, GearBuild>;
 }
 
 export interface JournalEntry {
@@ -657,6 +735,11 @@ export type Command =
   | { type: "return" }
   | { type: "search" }
   | { type: "build"; recipeId: string }
+  /** Component crafting. Missing picks are filled with the best material in the pack. */
+  | { type: "craft"; toolId: string; picks?: Partial<Record<SlotId, string>> }
+  | { type: "open-craft"; toolId: string }
+  | { type: "craft-pick"; slot: SlotId; materialId: string }
+  | { type: "close-craft" }
   | { type: "douse-signal" }
   | { type: "sighting"; choice: "back-away" | "kill" }
   | { type: "open-journal" }
@@ -800,4 +883,33 @@ export interface ViewModel {
   play: PlayView | null;
   end: EndView | null;
   modal: ItemModal | null;
+  craft: CraftView | null;
+}
+
+export interface CraftOptionView {
+  materialId: string;
+  name: string;
+  detail: string;
+  have: boolean;
+  selected: boolean;
+}
+
+export interface CraftSlotView {
+  id: SlotId;
+  label: string;
+  rule: string;
+  options: CraftOptionView[];
+  /** Set when nothing in the pack fits this slot. */
+  missing: string | null;
+}
+
+export interface CraftView {
+  toolId: string;
+  toolName: string;
+  known: boolean;
+  slots: CraftSlotView[];
+  summary: string[];
+  timeLabel: string;
+  block: string | null;
+  command: Command | null;
 }

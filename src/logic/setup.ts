@@ -53,6 +53,7 @@ export function createRun(data: GameData, journal: Journal, rng: Rng, seed: numb
     ending: null,
     pending: null,
     spoil: {},
+    gear: {},
   };
 
   let injuryLog: string | null = null;

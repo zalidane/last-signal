@@ -97,6 +97,26 @@
       "id": "knife",
       "chance": 0.15,
       "qty": 1
+    },
+    {
+      "id": "cord",
+      "chance": 0.45,
+      "qty": 1
+    },
+    {
+      "id": "duct-tape",
+      "chance": 0.12,
+      "qty": 1
+    },
+    {
+      "id": "seat-strut",
+      "chance": 0.25,
+      "qty": 1
+    },
+    {
+      "id": "glass-shard",
+      "chance": 0.2,
+      "qty": 1
     }
   ]
 }

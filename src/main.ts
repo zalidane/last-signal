@@ -37,7 +37,8 @@ window.addEventListener("keydown", (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   const view = game.view();
   if (event.key === "Escape") {
-    if (view.modal) game.dispatch({ type: "close-item" });
+    if (view.craft) game.dispatch({ type: "close-craft" });
+    else if (view.modal) game.dispatch({ type: "close-item" });
     else if (view.journalOpen) game.dispatch({ type: "close-journal" });
     else return;
     paint();

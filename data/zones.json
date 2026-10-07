@@ -74,6 +74,51 @@
         "qty": 1
       },
       {
+        "id": "seat-strut",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "aluminum-tube",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "panel-strip",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "plastic-pipe",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "glass-shard",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "metal-shard",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "metal-bolt",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "wire",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "cord",
+        "weight": 1,
+        "qty": 1
+      },
+      {
         "id": "nothing",
         "weight": 2,
         "qty": 0
@@ -143,6 +188,31 @@
       {
         "id": "fuel",
         "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "mesquite-branch",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "creosote-stick",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "yucca-leaves",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "stone",
+        "weight": 1,
+        "qty": 1
+      },
+      {
+        "id": "chert",
+        "weight": 1,
         "qty": 1
       },
       {
@@ -219,6 +289,31 @@
       },
       {
         "id": "mesquite-pod",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "chert",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "ironwood-branch",
+        "weight": 3,
+        "qty": 1
+      },
+      {
+        "id": "creosote-stick",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "yucca-leaves",
+        "weight": 2,
+        "qty": 1
+      },
+      {
+        "id": "stone",
         "weight": 2,
         "qty": 1
       },

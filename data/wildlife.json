@@ -45,7 +45,14 @@
         "id": "rattlesnake",
         "name": "Rattlesnake",
         "text": "A rattlesnake is food if you cook it. Its head can still bite after it is dead."
-      }
+      },
+      "drops": [
+        {
+          "item": "snake-sinew",
+          "qty": 1,
+          "log": "You strip the sinew from its back and set it to dry. It will bind better than anything in the wreck."
+        }
+      ]
     },
     {
       "id": "scorpion",
@@ -91,30 +98,43 @@
       "name": "Club",
       "tier": 1,
       "kill": {
-        "rattlesnake": 0.6,
-        "scorpion": 0.7
+        "rattlesnake": 0.58,
+        "scorpion": 0.68
       },
-      "failStrike": 0.7
+      "failStrike": 0.7,
+      "crafted": true
+    },
+    {
+      "id": "crafted-knife",
+      "name": "Crafted knife",
+      "tier": 2,
+      "kill": {
+        "rattlesnake": 0.56,
+        "scorpion": 0.72
+      },
+      "failStrike": 0.78,
+      "crafted": true
     },
     {
       "id": "knife",
-      "name": "Knife",
-      "tier": 2,
+      "name": "Factory knife",
+      "tier": 3,
       "kill": {
-        "rattlesnake": 0.65,
-        "scorpion": 0.8
+        "rattlesnake": 0.7,
+        "scorpion": 0.85
       },
-      "failStrike": 0.75
+      "failStrike": 0.72
     },
     {
       "id": "spear",
       "name": "Spear",
-      "tier": 3,
+      "tier": 4,
       "kill": {
-        "rattlesnake": 0.78,
-        "scorpion": 0.72
+        "rattlesnake": 0.72,
+        "scorpion": 0.66
       },
-      "failStrike": 0.5
+      "failStrike": 0.5,
+      "crafted": true
     }
   ],
   "killMods": {

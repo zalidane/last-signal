@@ -123,31 +123,32 @@
   },
   {
     "id": "knife",
-    "name": "Knife",
+    "name": "Factory knife",
     "category": "tool",
-    "blurb": "A folding knife with a chipped blade. The best thing you own for close work, including the kind that bites back.",
+    "blurb": "A folding knife with a real steel blade. Better than anything you can lash together, and it does not come apart on a miss.",
     "foundLog": "Half buried by a seat frame: a folding knife, blade still sound."
   },
   {
     "id": "club",
     "name": "Club",
     "category": "tool",
-    "blurb": "A bent strut wrapped for grip. Ugly reach, honest weight.",
-    "foundLog": "A strut that will do as a club."
+    "blurb": "A handle with a weight lashed to the end. Ugly reach, honest weight.",
+    "foundLog": "A club."
   },
   {
     "id": "spear",
     "name": "Spear",
     "category": "tool",
-    "blurb": "A strut with a stone point lashed in cloth. Reach is the whole point.",
+    "blurb": "A long shaft with an edge lashed to the tip. Reach is the whole point.",
     "foundLog": "A crude spear."
   },
   {
     "id": "torch",
     "name": "Torch",
     "category": "tool",
-    "blurb": "Cloth wound on a fuel stick. Enough light for one job in the dark, then it is ash.",
-    "foundLog": "A torch, unlit."
+    "blurb": "A handle with a flammable head. Each burn is one job's worth of light in the dark.",
+    "foundLog": "A torch, unlit.",
+    "unit": "burns"
   },
   {
     "id": "snake-meat",
@@ -162,5 +163,124 @@
     "category": "food",
     "blurb": "A dead scorpion, stinger off. A mouthful, if that.",
     "foundLog": "A dead scorpion."
+  },
+  {
+    "id": "crafted-knife",
+    "name": "Crafted knife",
+    "category": "tool",
+    "blurb": "An edge bound into a handle. It cuts. It is not a factory knife, and a miss can take it apart.",
+    "foundLog": "A crafted knife."
+  },
+  {
+    "id": "creosote-stick",
+    "name": "Creosote stick",
+    "category": "material",
+    "blurb": "A short, straight creosote stem. A handle for a knife, a club, or a torch.",
+    "foundLog": "You snap off a straight creosote stem. Handle length."
+  },
+  {
+    "id": "mesquite-branch",
+    "name": "Mesquite branch",
+    "category": "material",
+    "blurb": "A long, straight mesquite branch with the thorns knocked off. Long enough for a spear.",
+    "foundLog": "You work a straight mesquite branch loose and knock off the thorns."
+  },
+  {
+    "id": "ironwood-branch",
+    "name": "Ironwood branch",
+    "category": "material",
+    "blurb": "Desert ironwood, dense as bone. The best long handle out here.",
+    "foundLog": "A dead ironwood limb, heavy as a pipe. It will make a shaft that does not bend."
+  },
+  {
+    "id": "seat-strut",
+    "name": "Seat strut",
+    "category": "material",
+    "blurb": "A short aluminum strut from a seat frame. A stiff handle.",
+    "foundLog": "You unbolt a short strut from a broken seat frame."
+  },
+  {
+    "id": "aluminum-tube",
+    "name": "Aluminum tube",
+    "category": "material",
+    "blurb": "A long, light aluminum tube from the cabin frame. Long enough for a spear.",
+    "foundLog": "A long aluminum tube, bent at one end and straight enough."
+  },
+  {
+    "id": "panel-strip",
+    "name": "Panel strip",
+    "category": "material",
+    "blurb": "A strip of cabin plastic. It will do as a grip. It will not do near a flame.",
+    "foundLog": "You crack a strip of plastic off a cabin panel."
+  },
+  {
+    "id": "plastic-pipe",
+    "name": "Plastic pipe",
+    "category": "material",
+    "blurb": "A length of plastic duct pipe. Long, but it bows.",
+    "foundLog": "A length of plastic ducting, long and a little too bendy."
+  },
+  {
+    "id": "glass-shard",
+    "name": "Glass shard",
+    "category": "material",
+    "blurb": "A curved shard from a window. Wickedly sharp, and brittle.",
+    "foundLog": "You wrap a glass shard from a broken window in your sleeve."
+  },
+  {
+    "id": "metal-shard",
+    "name": "Sheet-metal shard",
+    "category": "material",
+    "blurb": "A torn piece of fuselage skin. Grind it on a rock and it holds an edge.",
+    "foundLog": "A torn tongue of fuselage skin. Grind it on a rock and it will cut."
+  },
+  {
+    "id": "chert",
+    "name": "Chert nodule",
+    "category": "material",
+    "blurb": "A glassy stone that breaks into flakes sharper than steel, if you know how to strike it.",
+    "foundLog": "A waxy chert nodule. Struck right, it flakes like glass."
+  },
+  {
+    "id": "metal-bolt",
+    "name": "Metal fitting",
+    "category": "material",
+    "blurb": "A heavy seat-rail fitting and its bolt. Weight for the end of a club.",
+    "foundLog": "You twist a heavy fitting off a seat rail."
+  },
+  {
+    "id": "cord",
+    "name": "Paracord",
+    "category": "material",
+    "blurb": "A hank of nylon cord. It binds anything you can tie.",
+    "foundLog": "A hank of paracord, still coiled."
+  },
+  {
+    "id": "wire",
+    "name": "Wire",
+    "category": "material",
+    "blurb": "A length of wiring stripped from the wreck. Twists tight and does not burn.",
+    "foundLog": "You strip a length of wire out of a torn panel."
+  },
+  {
+    "id": "duct-tape",
+    "name": "Duct tape",
+    "category": "material",
+    "blurb": "Half a roll. Fixes most things. Melts near a flame.",
+    "foundLog": "Half a roll of duct tape, sticky with dust."
+  },
+  {
+    "id": "yucca-leaves",
+    "name": "Yucca leaves",
+    "category": "material",
+    "blurb": "Stiff, fibrous leaves. Pounded and twisted, they make cord.",
+    "foundLog": "You cut a handful of yucca leaves. The fibers inside are long and strong."
+  },
+  {
+    "id": "snake-sinew",
+    "name": "Snake sinew",
+    "category": "material",
+    "blurb": "Sinew from a rattlesnake's back. The best binding you will find out here.",
+    "foundLog": "You strip the sinew from the snake's back and set it to dry."
   }
 ]

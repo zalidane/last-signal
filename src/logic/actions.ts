@@ -1,6 +1,7 @@
 import type {
   ActionButton,
   Command,
+  CraftView,
   DiscoveryDef,
   EffectDef,
   GameData,
@@ -10,7 +11,26 @@ import type {
   Journal,
   RecipeDef,
   RunState,
+  SlotId,
 } from "../models/types.ts";
+import {
+  buildCost,
+  buildMaterials,
+  craftBlock,
+  craftHours,
+  describeMaterial,
+  knowsPattern,
+  materialNoteId,
+  missingSlotText,
+  patternId,
+  resolveBuild,
+  SLOTS,
+  slotMaterials,
+  slotRule,
+  torchBurns,
+  applyBuild,
+  carryBlock,
+} from "./crafting.ts";
 import { resolveDawn } from "./dawn.ts";
 import { applyEffect } from "./effects.ts";
 import { finishIfEnded } from "./ending.ts";
@@ -86,9 +106,12 @@ function blockedText(plan: ActionPlan, data: GameData): string {
 /** Light the torch if this plan relies on one. It is spent by the action. */
 function lightTorch(state: RunState, plan: ActionPlan): RunState {
   if (!plan.torch) return state;
+  const left = Math.max(0, (state.inventory.torch ?? 0) - 1);
   return pushLog(
     { ...state, inventory: addItem(state.inventory, "torch", -1) },
-    "You light a torch. It will last the job and no longer.",
+    left > 0
+      ? `You light the torch for this job. ${left} burn${left === 1 ? "" : "s"} left on it.`
+      : "You light the torch. This is its last burn.",
   );
 }
 
@@ -186,6 +209,8 @@ function dispatch(
       return search(state, journal, data, rng);
     case "build":
       return build(state, journal, command.recipeId, data, rng);
+    case "craft":
+      return craft(state, journal, command.toolId, command.picks ?? {}, data, rng);
     case "douse-signal":
       return douse(state, journal);
     case "item":
@@ -493,6 +518,80 @@ function build(
       }
     }
   }
+  return step;
+}
+
+/** Component crafting: handle + tool end + binding. */
+function craft(
+  state: RunState,
+  journal: Journal,
+  toolId: string,
+  picks: Partial<Record<SlotId, string>>,
+  data: GameData,
+  rng: Rng,
+): StepResult {
+  const tool = data.toolById.get(toolId);
+  if (!tool) return { state, journal };
+  const resolved = resolveBuild(state, tool, data, picks);
+  const block = craftBlock(state, tool, data, resolved);
+  if (block || !resolved.build) return fail(state, journal, block ?? "Missing parts.");
+  const build = resolved.build;
+  const mats = buildMaterials(build, data);
+  const plan = planAction(state, craftHours(tool, build, data), data);
+  const names = mats.map((m) => m.name.toLowerCase());
+  let step = runHours(
+    withSlowNote(
+      pushLog(
+        { ...state, inventory: spend(state.inventory, buildCost(build, data)) },
+        `You lay out ${names[0]}, ${names[1]} and ${names[2]}, and start on a ${tool.name.toLowerCase()}.`,
+      ),
+      plan,
+    ),
+    journal,
+    plan.hours,
+    contextFor("build", atCamp(state)),
+    data,
+    rng,
+  );
+  if (step.state.phase === "ended") return step;
+  let next = step.state;
+  if (tool.end === "flammable") {
+    const burns = torchBurns(build, data);
+    next = pushLog(
+      { ...next, inventory: addItem(next.inventory, tool.item, burns) },
+      `${tool.log} About ${burns} burn${burns === 1 ? "" : "s"} of light.`,
+    );
+  } else {
+    next = {
+      ...next,
+      inventory: addItem(next.inventory, tool.item, 1),
+      gear: { ...(next.gear ?? {}), [tool.item]: build },
+      morale: clamp(next.morale + 2, 0, 100),
+    };
+    next = pushLog(next, tool.log);
+  }
+  let nextJournal = step.journal;
+  const learned = learnSchematic(nextJournal, {
+    id: patternId(tool),
+    name: tool.pattern.name,
+    text: `${tool.pattern.text} First made from ${names.join(", ")}.`,
+    learnedOnRun: runNumber(nextJournal),
+  });
+  nextJournal = learned.journal;
+  if (learned.learned) {
+    next = pushLog(noteRunSchematic(next, patternId(tool)), `Journal: ${tool.pattern.name.toLowerCase()} recorded. Handle, ${tool.end} end, binding.`);
+  }
+  for (const material of mats) {
+    const note = learnDiscovery(nextJournal, {
+      id: materialNoteId(material),
+      name: material.note.name,
+      text: material.note.text,
+      learnedOnRun: runNumber(nextJournal),
+    });
+    nextJournal = note.journal;
+    if (note.learned) next = pushLog(noteRunDiscovery(next, materialNoteId(material)), `Journal: ${material.note.text}`);
+  }
+  step = { state: next, journal: nextJournal };
   return step;
 }
 
@@ -909,9 +1008,10 @@ function sightingButtons(state: RunState, data: GameData): ActionButton[] {
   if (!animal) {
     return [button("sighting-back", "Now", "Back away", "", "", false, { type: "sighting", choice: "back-away" })];
   }
-  const weapon = bestWeapon(state, data);
+  const weapon = bestWeapon(state, data, animal);
   const odds = killOdds(state, animal, weapon, data);
   const miss = Math.round((1 - odds) * weapon.failStrike * 100);
+  const snap = Math.round((1 - odds) * (weapon.breakChance ?? 0) * 100);
   return [
     button(
       "sighting-back",
@@ -926,7 +1026,7 @@ function sightingButtons(state: RunState, data: GameData): ActionButton[] {
       "sighting-kill",
       "Now",
       `Try to kill the ${animal.name.toLowerCase()}`,
-      `${weapon.name} · about ${Math.round(odds * 100)}% to kill · ${miss}% it ${animal.strikeHazard === "snakebite" ? "bites" : "stings"} you`,
+      `${weapon.name} · about ${Math.round(odds * 100)}% to kill · ${miss}% it ${animal.strikeHazard === "snakebite" ? "bites" : "stings"} you${snap > 0 ? ` · ${snap}% the weapon comes apart` : ""}`,
       miss >= 50 ? "Risky with what you are holding" : "",
       false,
       { type: "sighting", choice: "kill" },
@@ -1048,6 +1148,7 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
   for (const recipe of data.recipes) {
     actions.push(...recipeButtons(state, journal, recipe, data));
   }
+  actions.push(...toolButtons(state, journal, data));
   if (state.camp.signalLit) {
     actions.push(button("douse", "Build", "Bank the signal fire", "Stops the fuel drain. Also stops the smoke.", "", false, { type: "douse-signal" }));
   }
@@ -1104,6 +1205,97 @@ export function waitButtons(state: RunState, data: GameData): ActionButton[] {
     );
   }
   return buttons;
+}
+
+function toolButtons(state: RunState, journal: Journal, data: GameData): ActionButton[] {
+  const out: ActionButton[] = [];
+  for (const tool of data.crafting.tools) {
+    const resolved = resolveBuild(state, tool, data);
+    const known = knowsPattern(journal, tool);
+    const anyPart = SLOTS.some((slot) => !resolved.missing.includes(slot));
+    if (!known && !anyPart) continue;
+    if (carryBlock(state, tool, data)) continue;
+    const block = craftBlock(state, tool, data, resolved);
+    const label = `${tool.end === "flammable" ? "Make" : "Craft"} a ${tool.name.toLowerCase()}`;
+    let detail = block ?? "";
+    let warning = "";
+    if (!block && resolved.build) {
+      const plan = planAction(state, craftHours(tool, resolved.build, data), data);
+      const parts = buildMaterials(resolved.build, data).map((m) => m.short.replace(/ \(.*\)$/, "")).join(" + ");
+      detail = `${planLabel(plan)} · ${parts}`;
+      const preview = previewLine(state, plan.hours, contextFor("build", atCamp(state)), data);
+      warning = preview.warning;
+    }
+    out.push(
+      button(`craft-${tool.id}`, "Build", known ? label : `${label} (untried)`, detail, warning, Boolean(block), {
+        type: "craft",
+        toolId: tool.id,
+      }),
+    );
+  }
+  return out;
+}
+
+/** The build dialog: three slots, what fits each, and what will be used. */
+export function buildCraftView(
+  state: RunState,
+  journal: Journal,
+  toolId: string,
+  picks: Partial<Record<SlotId, string>>,
+  data: GameData,
+): CraftView | null {
+  const tool = data.toolById.get(toolId);
+  if (!tool) return null;
+  const resolved = resolveBuild(state, tool, data, picks);
+  const block = craftBlock(state, tool, data, resolved);
+  const slots = data.crafting.slots.map((slotDef) => {
+    const slot = slotDef.id;
+    const chosen = resolved.chosen[slot];
+    return {
+      id: slot,
+      label: slotDef.label,
+      rule: slotRule(tool, slot),
+      options: slotMaterials(tool, slot, data).map((material) => ({
+        materialId: material.id,
+        name: material.name,
+        detail: describeMaterial(tool, material, state),
+        have: hasAll(state.inventory, material.consumes),
+        selected: material.id === chosen,
+      })),
+      missing: resolved.missing.includes(slot) ? missingSlotText(state, tool, slot, data) : null,
+    };
+  });
+  const summary: string[] = [];
+  let timeLabel = `${tool.hours}h`;
+  if (resolved.build) {
+    const plan = planAction(state, craftHours(tool, resolved.build, data), data);
+    timeLabel = planLabel(plan);
+    if (tool.end === "flammable") {
+      const burns = torchBurns(resolved.build, data);
+      summary.push(`${burns} burn${burns === 1 ? "" : "s"} of light: one per job in the dark.`);
+    } else if (tool.weapon) {
+      const base = data.wildlife.weapons.find((w) => w.id === tool.weapon);
+      if (base) {
+        const built = applyBuild(base, resolved.build, data);
+        const odds = Object.entries(built.kill)
+          .map(([id, value]) => `${Math.round(value * 100)}% vs ${data.animalById.get(id)?.name.toLowerCase() ?? id}`)
+          .join(" · ");
+        summary.push(`Kill odds in daylight: ${odds}.`);
+        summary.push(`Comes apart on a failed kill: ${Math.round((built.breakChance ?? 0) * 100)}%.`);
+        if (tool.id === "knife") summary.push("A factory knife beats any of these, and never comes apart.");
+      }
+    }
+  }
+  return {
+    toolId: tool.id,
+    toolName: tool.name,
+    known: knowsPattern(journal, tool),
+    slots,
+    summary,
+    timeLabel,
+    block,
+    command: block || !resolved.build ? null : { type: "craft", toolId: tool.id, picks: resolved.build },
+  };
 }
 
 /** Invariant: a live run always offers at least one enabled action. */
@@ -1205,7 +1397,7 @@ export function buildItemModal(
   if (!item || itemQty(state.inventory, itemId) <= 0) return null;
   const presented = presentItem(itemId, journal, data);
   const qty = state.inventory[itemId] ?? 0;
-  const qtyLabel = item.unit === "L" ? `${qty.toFixed(1)} L` : qty > 1 ? `×${qty}` : "";
+  const qtyLabel = item.unit === "L" ? `${qty.toFixed(1)} L` : item.unit === "burns" ? `${qty} burn${qty === 1 ? "" : "s"}` : qty > 1 ? `×${qty}` : "";
   const actions: ItemActionView[] = [];
   const discovery = data.discoveryByItemId.get(itemId);
   const meat = data.wildlife.meat[itemId];
@@ -1241,8 +1433,17 @@ export function buildItemModal(
       actions.push(discoveryAction(id, discovery, presented.known, state, data));
     }
   } else if (data.wildlife.weapons.some((weapon) => weapon.id === itemId)) {
+    const base = data.wildlife.weapons.find((weapon) => weapon.id === itemId);
+    const build = state.gear?.[itemId];
+    if (base && build) {
+      const built = applyBuild(base, build, data);
+      const parts = buildMaterials(build, data).map((m) => m.name.toLowerCase()).join(", ");
+      blurb = `${blurb} Made from ${parts}. About ${Math.round((built.kill.rattlesnake ?? 0) * 100)}% against a rattlesnake in daylight; ${Math.round((built.breakChance ?? 0) * 100)}% it comes apart on a miss.`;
+    }
     const best = bestWeapon(state, data);
-    blurb = `${blurb} ${best.id === itemId ? "This is what you will reach for if something rattles." : `You will reach for the ${best.name.toLowerCase()} first.`}`;
+    blurb = `${blurb} ${best.id === itemId ? "This is what you will reach for if something rattles." : `Against most things you will reach for the ${data.wildlife.weapons.find((w) => w.id === best.id)?.name.toLowerCase() ?? best.name.toLowerCase()} first.`}`;
+  } else if (itemId === "torch") {
+    blurb = `${blurb} ${qty} burn${qty === 1 ? "" : "s"} left. It lights itself for travel, searching, and fine work after dark.`;
   }
 
   actions.push(act("ignore", "Close", "Put it back.", false, ""));

@@ -82,7 +82,7 @@ Night is 19:00–06:00 (`darkness.fromHour`/`toHour`).
 - Hazards on dark actions: snakebite ×1.6, scorpion ×1.8, fall ×2.2, thorns ×1.4. With a torch or a lit fire pit only 40% of that extra applies (`lightHazardScale`).
 - Light-gated work is disabled with "Too dark. Needs light. A lit fire pit at camp, or a torch.": searching Rocky Ridge (`zones[].searchNeedsLight`), building a solar still (`recipes[].needsLight`), and reading the field manual.
 - Travel at night is allowed: slower and riskier.
-- **Torch**: 1 fuel + 1 cloth, 1h, buildable anywhere; carry up to 3. A torch is lit automatically for dark travel, dark searches, and light-gated work, and is used up by that one action. Plain crafting and food prep never burn a torch.
+- **Torch**: crafted from a handle, a flammable end, and a binding (see Crafting). The pack counts torch *burns*: one burn is lit automatically for each dark travel, dark search, or light-gated job. Crafting and food prep never burn a torch, and crafting is never light-gated, so you can always make a torch in the dark.
 
 ## Health regen (v3)
 
@@ -96,14 +96,59 @@ Cooked food heals a little at once: warmed ration +2, fire-prepared prickly pear
 
 - **Sightings** roll at the end of a zone search, a walk out to a zone, and a rest, wait, or open-air sleep in a zone. Never at camp. Chance per action: Wreckage Field 4%, Dry Wash 14%, Rocky Ridge 13%; × trigger (search 1, travel 0.8, rest 0.6); × band (night 1.2, dawn/dusk 1.5, morning 1, afternoon 0.6, midday 0.35); × 1.3 in the dark. Rattlesnakes are three times as common as scorpions in the wash and on the ridge.
 - **The game pauses**: only two actions are legal, *Back away* (snake strikes anyway 12%, scorpion 8%) or *Try to kill it*. Everything else is refused until you choose. Saved runs keep the prompt.
-- **Kill odds** by best weapon in the pack (picked automatically): bare hands and a rock 25% snake / 40% scorpion; club 60/70; knife 65/80; spear 78/72. ×0.75 in the dark with no light, ×0.85 when exhausted, clamped 5–95%. A miss means a strike (snakebite / scorpion condition) with probability bare 90%, club 70%, knife 75%, spear 50%; otherwise it gets away. A kill costs 4 fatigue (snake) or 1 (scorpion).
-- **Weapons**: knife (15% in the starting pack, or found in the Wreckage Field); club (2 debris, 1h, anywhere); spear (1 debris, 1 cloth, 1 stone, 2h, at camp).
+- **Kill odds** by the best weapon in the pack for that animal (picked automatically). Base odds, snake / scorpion: bare hands and a rock 25/40; club 58/68; crafted knife 56/72; factory knife 70/85; spear 72/66. Crafted weapons add their material modifiers (see Crafting). ×0.75 in the dark with no light, ×0.85 when exhausted, clamped 5–95%. A miss means a strike (snakebite / scorpion condition) with probability bare 90%, club 70%, crafted knife 78%, factory knife 72%, spear 50%; otherwise it gets away. A kill costs 4 fatigue (snake) or 1 (scorpion).
+- **Breakage**: on a failed kill only, a crafted weapon comes apart with the summed `breakOnFail` of its three parts (capped at 60%). The weakest part's line goes in the log and the weapon is gone. A factory knife never breaks.
+- **Weapons**: factory knife (15% in the starting pack, or found in the Wreckage Field) beats any crafted knife. Club, crafted knife, and spear are crafted (see Crafting).
+- **Snake sinew**: every rattlesnake kill also leaves one sinew, the best binding in the game.
 - **Meat**: rattlesnake meat or a scorpion. *Eat raw*: snake +18 hunger with 35% stomach cramps and diarrhea; scorpion +4 with 20% nausea. *Cook it* (lit fire pit at camp, 1h before pace): snake +30 hunger, +3 health, +5 morale; scorpion +8, +1, +2; never sick. Uncooked meat turns after 24h (all of that kind in the pack at once).
 - **Journal**: first kill of each animal and first sickness from raw snake each write an entry ("A rattlesnake is food if you cook it. Its head can still bite after it is dead." / "Scorpions are edible cooked once the stinger is off." / "Raw snake meat can make you sick. Cook it on the fire pit."). They count toward completion.
 
+## Crafting (v4)
+
+`data/crafting.json`. Code: `src/logic/crafting.ts`. Knife, club, spear, and torch are each **handle + tool end + binding**. The tool decides what fits; the material decides the modifiers.
+
+| Tool | Handle | Tool end | Binding | Base time | Where | Carry |
+| --- | --- | --- | --- | --- | --- | --- |
+| Knife (crafted) | short only | sharp | any | 1h | anywhere | 1 |
+| Club | any length | blunt | any | 1h | anywhere | 1 |
+| Spear | long only (plastic pipe allowed, −6% kill for flex) | sharp | any | 2h | camp | 1 |
+| Torch | any length | flammable | any | 1h | anywhere | craft while under 4 burns |
+
+Materials (kill is added to the weapon's base odds; break is added to its chance of coming apart on a failed kill):
+
+| Slot | Material | Kind / length | Uses | Kill | Break | Other | Found |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Handle | Creosote stick | wood, short | creosote stick | 0 | 3% | | Dry Wash, Rocky Ridge |
+| Handle | Mesquite branch | wood, long | mesquite branch | 0 | 3% | | Dry Wash |
+| Handle | Ironwood branch | wood (hardwood), long | ironwood branch | +3% | 0 | | Rocky Ridge |
+| Handle | Seat strut | metal, short | seat strut | +4% | 0 | | Wreckage Field, cabin, 25% start |
+| Handle | Aluminum tube | metal, long | aluminum tube | +3% | 1% | | Wreckage Field |
+| Handle | Panel strip | plastic, short | panel strip | −3% | 6% | torch −1 burn | Wreckage Field, cabin |
+| Handle | Plastic pipe | plastic, long | plastic pipe | −3% | 6% | torch −1 burn; spear −6% more | Wreckage Field |
+| End (sharp) | Glass shard | | glass shard | +6% | 30% | | Wreckage Field, cabin, 20% start |
+| End (sharp) | Sheet-metal shard | | metal shard | +2% | 6% | | Wreckage Field |
+| End (sharp) | Knapped stone flake | | chert nodule | +4% | 12% | +1h knapping | Rocky Ridge (better), Dry Wash (rare) |
+| End (blunt) | Heavy stone | | stone | 0 | 4% | | everywhere stone is |
+| End (blunt) | Metal fitting | | metal fitting | +4% | 2% | | Wreckage Field, cabin |
+| End (flammable) | Fuel bundle head | | fuel | — | — | 2 burns | as fuel |
+| End (flammable) | Resin-soaked cloth | | cloth + creosote sprigs | — | — | 3 burns | cloth + Dry Wash/Ridge creosote |
+| Binding | Paracord | | cord | +2% | 4% | | 45% start, Wreckage Field |
+| Binding | Wire | | wire | +2% | 5% | torch +1 burn | Wreckage Field, cabin |
+| Binding | Cloth strips | | cloth | 0 | 12% | | from cloth |
+| Binding | Yucca fiber | | yucca leaves | 0 | 10% | +1h to prepare | Dry Wash, Rocky Ridge |
+| Binding | Duct tape | | duct tape | +2% | 4% | torch −1 burn | 12% start |
+| Binding | Snake sinew | | snake sinew | +3% | 2% | | every rattlesnake kill |
+
+- Torch burns = end burns + handle and binding adjustments, minimum 1. Range 1–4.
+- **Build dialog**: a craft button opens a dialog with the three slots. Every material that fits the tool is listed; ones in the pack can be picked, the rest show "none in pack". The best affordable combination is preselected (score = kill − 0.5 × break − 0.02 × extra hours; torches: most burns). The dialog shows kill odds, break chance, or burns before you commit. Shared costs are checked (cloth strips + resin cloth needs two cloth).
+- **Disabled buttons say which slot is missing**, e.g. "Needs a binding: cord, wire, cloth strips, fiber, tape, or sinew.", "Needs a sharp tool end: glass shard, sheet-metal shard, or stone flake.", "Needs a long handle: mesquite branch, ironwood, aluminum tube, or plastic pipe. A short handle is no good for a spear."
+- A craft button appears once you hold at least one part that fits, or once the pattern is in the journal.
+- **Journal**: the first craft of each tool records its pattern as a schematic ("Knife pattern: Short handle + sharp end + binding…"), which keeps the button visible on later runs. The first use of each material writes a short note ("Glass takes an edge and loses it the first time it hits bone."). Both count toward completion.
+- Crafting takes clock time (with pace), is not light-gated, and is refused while a sighting is pending.
+
 ## Saves
 
-The active run lives in `sessionStorage` (`last-signal.session.v1`, format version 2). A run saved by an older version is discarded on load with a title-screen notice; the journal in `localStorage` is untouched.
+The active run lives in `sessionStorage` (`last-signal.session.v1`, format version 3: adds crafted `gear` builds). A run saved by an older version is discarded on load with a title-screen notice; the journal in `localStorage` is untouched.
 
 ## Camp
 
@@ -112,13 +157,13 @@ Tiers skip 4. Food preservation is out of scope.
 | Tier | Build | Cost | Effect |
 | --- | --- | --- | --- |
 | 0 Crash Site | — | — | Four cabin searches, partial night windbreak |
-| Gear | 1–2h | see Darkness and Wildlife | Torch, club, spear. Go in the pack, not the camp. |
+| Gear | 1–3h | handle + tool end + binding | Knife, club, spear, torch. See Crafting. Go in the pack, not the camp. |
 | 1 Basic Shelter | 4h | 2 cloth, 3 debris | Midday heat cut, cheaper rest and sleep, sandstorms become noise |
 | 2 Fire Pit | 2h | 4 stone, 1 fuel | Night warmth, cooking, no scorpion in camp, boil seep water |
 | 3 Water Collection | 3h each | 1 plastic, 1 container, 1 tubing | 0.5–1 L per still per dawn. Better in the wash. |
 | 5 Signal Station | 1h | Fire pit + 2 fuel | See rescue |
 
-Recipes: `data/recipes.json`.
+Recipes: `data/recipes.json`. Tools: `data/crafting.json`.
 
 ## Zones
 

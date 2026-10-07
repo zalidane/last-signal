@@ -1,0 +1,534 @@
+{
+  "slots": [
+    {
+      "id": "handle",
+      "label": "Handle"
+    },
+    {
+      "id": "end",
+      "label": "Tool end"
+    },
+    {
+      "id": "binding",
+      "label": "Binding"
+    }
+  ],
+  "maxBreak": 0.6,
+  "autoPick": {
+    "breakWeight": 0.5,
+    "hourWeight": 0.02
+  },
+  "materials": [
+    {
+      "id": "creosote-stick",
+      "slot": "handle",
+      "kind": "wood",
+      "length": "short",
+      "name": "Creosote stick",
+      "short": "creosote stick",
+      "consumes": {
+        "creosote-stick": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0.03
+      },
+      "breakLog": "The creosote stick splits along the grain.",
+      "note": {
+        "name": "Creosote wood",
+        "text": "Creosote makes a short, light handle. It splits if you lean on it."
+      }
+    },
+    {
+      "id": "mesquite-branch",
+      "slot": "handle",
+      "kind": "wood",
+      "length": "long",
+      "name": "Mesquite branch",
+      "short": "mesquite branch",
+      "consumes": {
+        "mesquite-branch": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0.03
+      },
+      "breakLog": "The mesquite shaft cracks where the knot was.",
+      "note": {
+        "name": "Mesquite wood",
+        "text": "A straight mesquite branch is long enough for a spear and tough enough to trust once."
+      }
+    },
+    {
+      "id": "ironwood-branch",
+      "slot": "handle",
+      "kind": "wood",
+      "length": "long",
+      "name": "Ironwood branch",
+      "short": "ironwood",
+      "consumes": {
+        "ironwood-branch": 1
+      },
+      "mods": {
+        "kill": 0.03,
+        "breakOnFail": 0
+      },
+      "breakLog": "Even the ironwood gives, finally.",
+      "note": {
+        "name": "Desert ironwood",
+        "text": "Ironwood from the ridge is dense enough to sink. It makes the best long handle out here."
+      }
+    },
+    {
+      "id": "seat-strut",
+      "slot": "handle",
+      "kind": "metal",
+      "length": "short",
+      "name": "Seat strut",
+      "short": "seat strut",
+      "consumes": {
+        "seat-strut": 1
+      },
+      "mods": {
+        "kill": 0.04,
+        "breakOnFail": 0
+      },
+      "breakLog": "The strut bends at the bolt hole.",
+      "note": {
+        "name": "Metal handles",
+        "text": "A metal handle does not flex or split. You feel the hit land through it."
+      }
+    },
+    {
+      "id": "aluminum-tube",
+      "slot": "handle",
+      "kind": "metal",
+      "length": "long",
+      "name": "Aluminum tube",
+      "short": "aluminum tube",
+      "consumes": {
+        "aluminum-tube": 1
+      },
+      "mods": {
+        "kill": 0.03,
+        "breakOnFail": 0.01
+      },
+      "breakLog": "The aluminum tube kinks in the middle.",
+      "note": {
+        "name": "Aluminum tubing",
+        "text": "Aluminum tube from the wreck is long, light, and stiff. It dents before it breaks."
+      }
+    },
+    {
+      "id": "panel-strip",
+      "slot": "handle",
+      "kind": "plastic",
+      "length": "short",
+      "name": "Panel strip",
+      "short": "panel strip",
+      "consumes": {
+        "panel-strip": 1
+      },
+      "mods": {
+        "kill": -0.03,
+        "breakOnFail": 0.06,
+        "torchBurns": -1
+      },
+      "breakLog": "The plastic strip snaps with a sound like a bone.",
+      "note": {
+        "name": "Plastic handles",
+        "text": "Cabin plastic will do for a grip, but it bends at the wrong time and softens near a flame."
+      }
+    },
+    {
+      "id": "plastic-pipe",
+      "slot": "handle",
+      "kind": "plastic",
+      "length": "long",
+      "name": "Plastic pipe",
+      "short": "plastic pipe",
+      "consumes": {
+        "plastic-pipe": 1
+      },
+      "mods": {
+        "kill": -0.03,
+        "breakOnFail": 0.06,
+        "torchBurns": -1
+      },
+      "breakLog": "The pipe folds where you were gripping it.",
+      "note": {
+        "name": "Plastic pipe",
+        "text": "Plastic pipe is long but it bows. A spear on it thrusts a little to the side of where you aim."
+      }
+    },
+    {
+      "id": "glass-shard",
+      "slot": "end",
+      "kind": "sharp",
+      "name": "Glass shard",
+      "short": "glass shard",
+      "consumes": {
+        "glass-shard": 1
+      },
+      "mods": {
+        "kill": 0.06,
+        "breakOnFail": 0.3
+      },
+      "breakLog": "The glass edge shatters against the rock. You are holding a stick.",
+      "note": {
+        "name": "Glass edges",
+        "text": "Glass takes an edge and loses it the first time it hits bone."
+      }
+    },
+    {
+      "id": "metal-shard",
+      "slot": "end",
+      "kind": "sharp",
+      "name": "Sheet-metal shard",
+      "short": "sheet-metal shard",
+      "consumes": {
+        "metal-shard": 1
+      },
+      "mods": {
+        "kill": 0.02,
+        "breakOnFail": 0.06
+      },
+      "breakLog": "The metal blade folds over at the tip.",
+      "note": {
+        "name": "Sheet-metal blades",
+        "text": "Fuselage skin ground on a rock is not sharp for long, but it does not shatter."
+      }
+    },
+    {
+      "id": "chert-flake",
+      "slot": "end",
+      "kind": "sharp",
+      "name": "Knapped stone flake",
+      "short": "stone flake",
+      "consumes": {
+        "chert": 1
+      },
+      "extraHours": 1,
+      "mods": {
+        "kill": 0.04,
+        "breakOnFail": 0.12
+      },
+      "breakLog": "The stone flake snaps off at the lashing.",
+      "note": {
+        "name": "Knapping chert",
+        "text": "Chert from the ridge breaks into flakes sharper than steel. It takes an hour of patient strikes and a cut thumb."
+      }
+    },
+    {
+      "id": "heavy-stone",
+      "slot": "end",
+      "kind": "blunt",
+      "name": "Heavy stone",
+      "short": "heavy stone",
+      "consumes": {
+        "stone": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0.04
+      },
+      "breakLog": "The stone slips its lashing and rolls away.",
+      "note": {
+        "name": "Stone heads",
+        "text": "A fist-sized stone lashed to a handle hits harder than your arm alone. Lash it tight or it leaves."
+      }
+    },
+    {
+      "id": "metal-bolt",
+      "slot": "end",
+      "kind": "blunt",
+      "name": "Metal fitting",
+      "short": "bolt or fitting",
+      "consumes": {
+        "metal-bolt": 1
+      },
+      "mods": {
+        "kill": 0.04,
+        "breakOnFail": 0.02
+      },
+      "breakLog": "The fitting tears loose from the handle.",
+      "note": {
+        "name": "Metal heads",
+        "text": "A seat-rail fitting is heavier for its size than any stone. Weight at the end is the whole trick."
+      }
+    },
+    {
+      "id": "fuel-head",
+      "slot": "end",
+      "kind": "flammable",
+      "name": "Fuel bundle head",
+      "short": "fuel bundle",
+      "consumes": {
+        "fuel": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0,
+        "burns": 2
+      },
+      "note": {
+        "name": "Fuel torches",
+        "text": "Foam and tire strip wound on a stick burn hot and fast. Two jobs of light, then ash."
+      }
+    },
+    {
+      "id": "resin-cloth",
+      "slot": "end",
+      "kind": "flammable",
+      "name": "Resin-soaked cloth",
+      "short": "resin-soaked cloth (cloth + creosote)",
+      "consumes": {
+        "cloth": 1,
+        "creosote": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0,
+        "burns": 3
+      },
+      "note": {
+        "name": "Resin torches",
+        "text": "Cloth rubbed with creosote resin burns slow and bright. It smells like rain while it does it."
+      }
+    },
+    {
+      "id": "cord",
+      "slot": "binding",
+      "kind": "cord",
+      "name": "Paracord",
+      "short": "cord",
+      "consumes": {
+        "cord": 1
+      },
+      "mods": {
+        "kill": 0.02,
+        "breakOnFail": 0.04
+      },
+      "breakLog": "The cord slips its knot.",
+      "note": {
+        "name": "Paracord",
+        "text": "Paracord holds anything you can tie. Pull the inner strands if you need more."
+      }
+    },
+    {
+      "id": "wire",
+      "slot": "binding",
+      "kind": "wire",
+      "name": "Wire",
+      "short": "wire",
+      "consumes": {
+        "wire": 1
+      },
+      "mods": {
+        "kill": 0.02,
+        "breakOnFail": 0.05,
+        "torchBurns": 1
+      },
+      "breakLog": "The wire unwinds on the impact.",
+      "note": {
+        "name": "Wire binding",
+        "text": "Wiring from the wreck twists tight and does not burn. A torch head stays on it longer."
+      }
+    },
+    {
+      "id": "cloth-strips",
+      "slot": "binding",
+      "kind": "cloth",
+      "name": "Cloth strips",
+      "short": "cloth strips",
+      "consumes": {
+        "cloth": 1
+      },
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0.12
+      },
+      "breakLog": "The cloth strips tear and the head swings free.",
+      "note": {
+        "name": "Cloth lashing",
+        "text": "Strips of cabin cloth will hold a head on until the first real hit. Wet them and they shrink tighter."
+      }
+    },
+    {
+      "id": "plant-fiber",
+      "slot": "binding",
+      "kind": "fiber",
+      "name": "Yucca fiber",
+      "short": "fiber",
+      "consumes": {
+        "yucca-leaves": 1
+      },
+      "extraHours": 1,
+      "mods": {
+        "kill": 0,
+        "breakOnFail": 0.1
+      },
+      "breakLog": "The fiber cord frays through.",
+      "note": {
+        "name": "Yucca fiber",
+        "text": "Pound yucca leaves and twist the fibers. An hour of work makes a cord that will hold."
+      }
+    },
+    {
+      "id": "duct-tape",
+      "slot": "binding",
+      "kind": "tape",
+      "name": "Duct tape",
+      "short": "tape",
+      "consumes": {
+        "duct-tape": 1
+      },
+      "mods": {
+        "kill": 0.02,
+        "breakOnFail": 0.04,
+        "torchBurns": -1
+      },
+      "breakLog": "The tape peels in the heat and lets go.",
+      "note": {
+        "name": "Duct tape",
+        "text": "Duct tape fixes most things, except near a flame, where it melts and drips."
+      }
+    },
+    {
+      "id": "sinew",
+      "slot": "binding",
+      "kind": "sinew",
+      "name": "Snake sinew",
+      "short": "sinew",
+      "consumes": {
+        "snake-sinew": 1
+      },
+      "mods": {
+        "kill": 0.03,
+        "breakOnFail": 0.02
+      },
+      "breakLog": "Even the sinew parts.",
+      "note": {
+        "name": "Sinew binding",
+        "text": "Wet sinew wraps easily and shrinks as it dries. Nothing in the wreck binds as tight."
+      }
+    }
+  ],
+  "tools": [
+    {
+      "id": "knife",
+      "name": "Knife",
+      "item": "crafted-knife",
+      "weapon": "crafted-knife",
+      "hours": 1,
+      "where": [
+        "camp",
+        "wreckage-field",
+        "dry-wash",
+        "rocky-ridge"
+      ],
+      "maxCarry": 1,
+      "handle": {
+        "lengths": [
+          "short"
+        ],
+        "label": "short handle"
+      },
+      "end": "sharp",
+      "lengthNote": "A long handle is no good for a knife.",
+      "log": "You seat the edge in the handle and bind it tight. It is not a factory knife. It will cut.",
+      "pattern": {
+        "name": "Knife pattern",
+        "text": "Short handle + sharp end (glass, sheet metal, or a knapped stone flake) + binding. A factory knife is still better."
+      }
+    },
+    {
+      "id": "club",
+      "name": "Club",
+      "item": "club",
+      "weapon": "club",
+      "hours": 1,
+      "where": [
+        "camp",
+        "wreckage-field",
+        "dry-wash",
+        "rocky-ridge"
+      ],
+      "maxCarry": 1,
+      "handle": {
+        "lengths": [
+          "short",
+          "long"
+        ],
+        "label": "handle"
+      },
+      "end": "blunt",
+      "log": "You lash the weight to the handle. It is a club. It is also a decision about what to do when something rattles.",
+      "pattern": {
+        "name": "Club pattern",
+        "text": "Any handle + blunt end (a heavy stone or a metal fitting) + binding."
+      }
+    },
+    {
+      "id": "spear",
+      "name": "Spear",
+      "item": "spear",
+      "weapon": "spear",
+      "hours": 2,
+      "where": [
+        "camp"
+      ],
+      "maxCarry": 1,
+      "handle": {
+        "lengths": [
+          "long"
+        ],
+        "label": "long handle",
+        "kindPenalty": {
+          "plastic": -0.06
+        },
+        "kindNote": {
+          "plastic": "Plastic flexes on a spear: \u22126% to kill."
+        }
+      },
+      "end": "sharp",
+      "lengthNote": "A short handle is no good for a spear. Reach is the point.",
+      "log": "A long shaft, an edge, a lashing pulled tight. Reach, which is most of what a spear is.",
+      "pattern": {
+        "name": "Spear pattern",
+        "text": "Long handle (a branch or metal tubing; plastic pipe flexes) + sharp end + binding. Build it at camp."
+      }
+    },
+    {
+      "id": "torch",
+      "name": "Torch",
+      "item": "torch",
+      "hours": 1,
+      "where": [
+        "camp",
+        "wreckage-field",
+        "dry-wash",
+        "rocky-ridge"
+      ],
+      "maxCarry": 4,
+      "handle": {
+        "lengths": [
+          "short",
+          "long"
+        ],
+        "label": "handle"
+      },
+      "end": "flammable",
+      "log": "You bind the head to the handle. Light for when the sun is gone.",
+      "pattern": {
+        "name": "Torch pattern",
+        "text": "Any handle + flammable end (a fuel bundle, or cloth rubbed with creosote resin for longer) + binding. Wire keeps it burning longer; tape and plastic melt."
+      }
+    }
+  ],
+  "slotWords": {
+    "sharp": "a sharp tool end",
+    "blunt": "a blunt tool end",
+    "flammable": "a flammable tool end"
+  }
+}

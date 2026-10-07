@@ -1,4 +1,5 @@
 import type {
+  SlotId,
   EndView,
   GameData,
   Journal,
@@ -9,7 +10,7 @@ import type {
   Tone,
   ViewModel,
 } from "../models/types.ts";
-import { buildItemModal, listActions } from "./actions.ts";
+import { buildCraftView, buildItemModal, listActions } from "./actions.ts";
 import { presentItem } from "./inventory.ts";
 import { journalCompletion } from "./journal.ts";
 import { regenBlockers } from "./needs.ts";
@@ -23,6 +24,8 @@ export interface UiFlags {
   itemId: string | null;
   /** One-time message for the title screen, e.g. an old save that could not be resumed. */
   notice?: string | null;
+  /** The open build dialog and any per-slot picks the player made. */
+  craft?: { toolId: string; picks: Partial<Record<SlotId, string>> } | null;
 }
 
 const CATEGORY_ORDER = ["water", "food", "discovery", "medical", "tool", "material"];
@@ -87,7 +90,7 @@ export function projectPlay(state: RunState, journal: Journal, data: GameData): 
       : "Resting, sleeping, or waiting will slowly heal you.",
   );
   const animal = state.pending ? data.animalById.get(state.pending.animalId) : undefined;
-  const weapon = bestWeapon(state, data);
+  const weapon = bestWeapon(state, data, animal);
   const heat = thermal(state, data);
   const zone = state.location === "camp" ? null : data.zoneById.get(state.location);
   const meters: MeterView[] = [
@@ -140,7 +143,7 @@ export function projectPlay(state: RunState, journal: Journal, data: GameData): 
     .map(([id, qty]) => {
       const item = data.itemById.get(id);
       const presented = presentItem(id, journal, data);
-      const qtyLabel = item?.unit === "L" ? `${qty.toFixed(1)} L` : `×${qty}`;
+      const qtyLabel = item?.unit === "L" ? `${qty.toFixed(1)} L` : item?.unit === "burns" ? `${qty} burn${qty === 1 ? "" : "s"}` : `×${qty}`;
       return {
         id,
         name: presented.name,
@@ -287,6 +290,10 @@ export function projectView(
     modal:
       state && ui.itemId && state.phase === "playing"
         ? buildItemModal(state, journal, ui.itemId, data)
+        : null,
+    craft:
+      state && ui.craft && state.phase === "playing" && !state.pending
+        ? buildCraftView(state, journal, ui.craft.toolId, ui.craft.picks ?? {}, data)
         : null,
   };
 }

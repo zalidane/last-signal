@@ -6,17 +6,90 @@
   "tierName": "Crash Site",
   "blurb": "The fuselage is your landmark and your only windbreak. Camp is temporary. It is also the only place you should sleep.",
   "loot": [
-    { "id": "debris", "weight": 5, "qty": 1 },
-    { "id": "cloth", "weight": 4, "qty": 1 },
-    { "id": "stone", "weight": 3, "qty": 1 },
-    { "id": "fuel", "weight": 3, "qty": 1 },
-    { "id": "plastic-sheet", "weight": 3, "qty": 1 },
-    { "id": "container", "weight": 3, "qty": 1 },
-    { "id": "tubing", "weight": 2, "qty": 1 },
-    { "id": "water", "weight": 3, "qty": 0.5 },
-    { "id": "ration", "weight": 2, "qty": 1 },
-    { "id": "first-aid", "weight": 1, "qty": 1 },
-    { "id": "field-manual", "weight": 1, "qty": 1 },
-    { "id": "nothing", "weight": 1, "qty": 0 }
+    {
+      "id": "debris",
+      "weight": 5,
+      "qty": 1
+    },
+    {
+      "id": "cloth",
+      "weight": 4,
+      "qty": 1
+    },
+    {
+      "id": "stone",
+      "weight": 3,
+      "qty": 1
+    },
+    {
+      "id": "fuel",
+      "weight": 3,
+      "qty": 1
+    },
+    {
+      "id": "plastic-sheet",
+      "weight": 3,
+      "qty": 1
+    },
+    {
+      "id": "container",
+      "weight": 3,
+      "qty": 1
+    },
+    {
+      "id": "tubing",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "water",
+      "weight": 3,
+      "qty": 0.5
+    },
+    {
+      "id": "ration",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "first-aid",
+      "weight": 1,
+      "qty": 1
+    },
+    {
+      "id": "field-manual",
+      "weight": 1,
+      "qty": 1
+    },
+    {
+      "id": "seat-strut",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "panel-strip",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "glass-shard",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "wire",
+      "weight": 2,
+      "qty": 1
+    },
+    {
+      "id": "metal-bolt",
+      "weight": 1,
+      "qty": 1
+    },
+    {
+      "id": "nothing",
+      "weight": 1,
+      "qty": 0
+    }
   ]
 }

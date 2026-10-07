@@ -1,4 +1,5 @@
 import type { AnimalDef, GameData, Journal, RunState, WeaponDef } from "../models/types.ts";
+import { applyBuild, brokenPart } from "./crafting.ts";
 import { addConditions } from "./effects.ts";
 import { applyHazard } from "./hazards.ts";
 import { addItem } from "./inventory.ts";
@@ -10,12 +11,26 @@ import { clamp, round2, weightedIndex } from "./util.ts";
 
 export type SightingTrigger = "search" | "travel" | "rest";
 
-export function bestWeapon(state: RunState, data: GameData): WeaponDef {
-  const weapons = [...data.wildlife.weapons].sort((a, b) => b.tier - a.tier);
-  for (const weapon of weapons) {
-    if (weapon.id === "none" || (state.inventory[weapon.id] ?? 0) >= 1) return weapon;
-  }
-  return weapons[weapons.length - 1] as WeaponDef;
+/** Every weapon in reach, with crafted builds applied. Bare hands always count. */
+export function carriedWeapons(state: RunState, data: GameData): WeaponDef[] {
+  return data.wildlife.weapons
+    .filter((weapon) => weapon.id === "none" || (state.inventory[weapon.id] ?? 0) >= 1)
+    .map((weapon) => applyBuild(weapon, state.gear?.[weapon.id], data));
+}
+
+/**
+ * What you reach for. Against a known animal: the best odds for it.
+ * Otherwise: the highest tier you carry.
+ */
+export function bestWeapon(state: RunState, data: GameData, animal?: AnimalDef): WeaponDef {
+  const weapons = carriedWeapons(state, data).sort((a, b) => {
+    if (animal) {
+      const diff = (b.kill[animal.id] ?? 0) - (a.kill[animal.id] ?? 0);
+      if (Math.abs(diff) > 1e-9) return diff;
+    }
+    return b.tier - a.tier;
+  });
+  return weapons[0] ?? (data.wildlife.weapons[0] as WeaponDef);
 }
 
 export function killOdds(state: RunState, animal: AnimalDef, weapon: WeaponDef, data: GameData): number {
@@ -89,7 +104,7 @@ export function resolveSighting(
     return { state: pushLog(next, animal.backAwayLog), journal };
   }
 
-  const weapon = bestWeapon(next, data);
+  const weapon = bestWeapon(next, data, animal);
   const odds = killOdds(next, animal, weapon, data);
   next = { ...next, fatigue: clamp(next.fatigue + animal.killFatigue, 0, 100) };
   if (rng.next() < odds) {
@@ -100,11 +115,23 @@ export function resolveSighting(
       spoil: { ...next.spoil, [animal.meat.item]: meat?.spoilHours ?? 24 },
     };
     next = pushLog(next, animal.killLog);
+    for (const drop of animal.drops ?? []) {
+      next = pushLog({ ...next, inventory: addItem(next.inventory, drop.item, drop.qty) }, drop.log);
+    }
     const learned = learnDiscovery(journal, { ...animal.journal, learnedOnRun: runNumber(journal) });
     if (learned.learned) {
       next = pushLog(noteRunDiscovery(next, animal.journal.id), `Journal: ${animal.journal.text}`);
     }
     return { state: next, journal: learned.journal };
+  }
+  if (weapon.crafted && weapon.build && (weapon.breakChance ?? 0) > 0 && rng.next() < (weapon.breakChance ?? 0)) {
+    const part = brokenPart(weapon.build, data);
+    const gear = { ...(next.gear ?? {}) };
+    delete gear[weapon.id];
+    next = pushLog(
+      { ...next, inventory: addItem(next.inventory, weapon.id, -1), gear },
+      `${part?.breakLog ?? "It comes apart in your hands."} The ${data.wildlife.weapons.find((w) => w.id === weapon.id)?.name.toLowerCase() ?? "tool"} is finished.`,
+    );
   }
   if (rng.next() < weapon.failStrike) return strike(next, journal, animal, data, animal.failLog);
   return { state: pushLog(next, animal.escapeLog), journal };

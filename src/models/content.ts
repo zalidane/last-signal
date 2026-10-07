@@ -16,6 +16,7 @@ import lessons from "../../data/lessons.json";
 import copy from "../../data/copy.json";
 import schematics from "../../data/schematics.json";
 import wildlife from "../../data/wildlife.json";
+import crafting from "../../data/crafting.json";
 
 function indexBy<T extends { id: string }>(rows: T[]): Map<string, T> {
   return new Map(rows.map((row) => [row.id, row]));
@@ -54,8 +55,13 @@ export function createGameData(): GameData {
     schematicById: indexBy(schematicRows),
     wildlife: wildlife as unknown as GameData["wildlife"],
     animalById: new Map(),
+    crafting: crafting as unknown as GameData["crafting"],
+    materialById: new Map(),
+    toolById: new Map(),
   };
   data.animalById = indexBy(data.wildlife.animals);
+  data.materialById = indexBy(data.crafting.materials);
+  data.toolById = indexBy(data.crafting.tools);
   assertContent(data);
   return data;
 }
@@ -104,6 +110,25 @@ export function assertContent(data: GameData): void {
   }
   for (const recipe of data.recipes) {
     for (const id of Object.keys(recipe.yields ?? {})) need(data.itemById.has(id), `${recipe.id} yields ${id}`);
+  }
+  for (const animal of data.wildlife.animals) {
+    for (const drop of animal.drops ?? []) need(data.itemById.has(drop.item), `${animal.id} drop ${drop.item}`);
+  }
+  for (const material of data.crafting.materials) {
+    for (const id of Object.keys(material.consumes)) need(data.itemById.has(id), `material ${material.id} uses ${id}`);
+    need(material.slot !== "handle" || Boolean(material.length), `handle ${material.id} needs a length`);
+  }
+  for (const tool of data.crafting.tools) {
+    need(data.itemById.has(tool.item), `tool ${tool.id} item`);
+    need(!tool.weapon || data.wildlife.weapons.some((w) => w.id === tool.weapon), `tool ${tool.id} weapon`);
+    for (const slot of ["handle", "end", "binding"] as const) {
+      const ok = data.crafting.materials.some((m) =>
+        m.slot === slot &&
+        (slot !== "handle" || (m.length !== undefined && tool.handle.lengths.includes(m.length))) &&
+        (slot !== "end" || m.kind === tool.end),
+      );
+      need(ok, `tool ${tool.id} has no ${slot} material`);
+    }
   }
 }
 

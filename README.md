@@ -33,6 +33,17 @@ The day starts at 06:00. There is no work-hour budget: every action costs clock 
 - A lit signal fire burns one fuel bundle each dawn and pulls the hidden rescue day earlier. The day itself stays off the screen until the end card.
 - Not every seed can be won. A death still writes a lesson.
 
+### Crafting
+
+Knife, club, spear, and torch are each built from three parts: a **handle**, a **tool end**, and a **binding**.
+
+- Handles: wood (creosote stick, mesquite branch, ironwood), metal (seat strut, aluminum tube), or plastic (panel strip, plastic pipe). A knife needs a short handle, a spear a long one. Plastic pipe flexes on a spear. Metal is sturdier; plastic is weaker and melts on a torch.
+- Tool ends: sharp for a knife or spear (glass shard: sharp but brittle; sheet-metal shard; a knapped chert flake, +1h); blunt for a club (heavy stone, metal fitting); flammable for a torch (fuel bundle = 2 burns, resin-soaked cloth from cloth + creosote = 3 burns).
+- Bindings: paracord, wire, cloth strips, yucca fiber (+1h), duct tape, or sinew from a rattlesnake you killed. Better bindings come apart less.
+- The build dialog shows each slot, preselects the best parts you carry, and lets you pick a different one per slot. A crafted weapon can come apart on a failed kill. A factory knife is better than any crafted one and never breaks.
+- Wreckage Field has metal, plastic, glass, and wire. Dry Wash has wood, stones, and yucca. Rocky Ridge has chert for knapping and ironwood. Some runs start with cord or duct tape.
+- The first time you make each tool, the journal keeps the pattern for later runs.
+
 Press `J` for the journal.
 
 ## Layout

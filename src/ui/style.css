@@ -184,3 +184,26 @@ p { margin: 0; }
 .sighting { border-color: var(--warn); max-width: 30rem; }
 .sighting .modal-actions .action { width: 100%; text-align: left; }
 .play-shell[data-dark="1"] .stage { filter: brightness(0.92) saturate(0.9); }
+
+.craft-modal { width: min(920px, 100%); border-color: var(--brass); }
+.craft-modal .slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin: 0.6rem 0 0.9rem; }
+.craft-modal .slot { border: 1px solid var(--line); padding: 0.6rem; background: #17120f; }
+.craft-modal .slot.empty { border-color: var(--danger); }
+.craft-modal .slot h3 { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); margin: 0 0 0.2rem; }
+.craft-modal .rule { color: var(--muted); font-size: 0.78rem; margin: 0 0 0.5rem; }
+.craft-modal .slot-missing { color: #f0c2b8; font-size: 0.82rem; margin: 0 0 0.5rem; }
+.craft-modal .parts { display: grid; gap: 0.3rem; }
+.craft-modal button.part { padding: 0.4rem 0.5rem; }
+.craft-modal button.part small { font-size: 0.74rem; }
+.craft-modal button.part.selected { border-color: var(--signal); background: #2a1a12; box-shadow: inset 3px 0 0 var(--signal); }
+.craft-modal button.part.missing { opacity: 0.42; }
+.craft-modal .craft-summary { margin: 0 0 0.9rem; padding-left: 1.1rem; color: var(--muted); font-size: 0.88rem; }
+.craft-modal .craft-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; }
+.craft-modal button.primary { display: grid; text-align: left; background: var(--signal); border-color: var(--signal); color: #1a0d08; }
+.craft-modal button.primary:disabled { background: #2a211b; border-color: var(--line); color: var(--muted); }
+.craft-modal button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.craft-modal button.primary small { color: inherit; opacity: 0.8; }
+@media (max-width: 760px) {
+  .craft-modal .slots { grid-template-columns: 1fr; }
+  .craft-modal .craft-actions { grid-template-columns: 1fr; }
+}

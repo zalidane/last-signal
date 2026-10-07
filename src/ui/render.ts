@@ -1,4 +1,4 @@
-import type { ActionButton, PlayView, ViewModel } from "../models/types.ts";
+import type { ActionButton, CraftView, PlayView, ViewModel } from "../models/types.ts";
 
 function esc(value: string): string {
   return value
@@ -25,6 +25,7 @@ export function render(view: ViewModel): string {
     ${view.play ? renderPlay(view.play, view.journal.stats.runs) : ""}
     ${renderJournal(view)}
     ${renderModal(view)}
+    ${view.craft && view.screen === "play" && !view.journalOpen ? renderCraft(view.craft) : ""}
     ${view.play?.sighting && view.screen === "play" && !view.journalOpen ? renderSighting(view.play) : ""}
     ${view.screen === "end" && view.end && !view.journalOpen ? renderEnd(view) : ""}
   </div>`;
@@ -215,7 +216,9 @@ function renderActions(play: PlayView): string {
 
 function renderAction(action: ActionButton): string {
   const warning = action.warning ? `<em>${esc(action.warning)}</em>` : "";
-  const attr = action.disabled || !action.command ? "disabled" : `data-cmd="${cmd(action.command)}"`;
+  // Crafting opens the build dialog first, where each slot can be chosen.
+  const command = action.command?.type === "craft" ? { type: "open-craft", toolId: action.command.toolId } : action.command;
+  const attr = action.disabled || !command ? "disabled" : `data-cmd="${cmd(command)}"`;
   return `<button type="button" class="action ${action.warning ? "hot" : ""}" ${attr}>
     <b>${esc(action.label)}</b>
     <small>${esc(action.detail)}</small>
@@ -234,6 +237,44 @@ function renderSighting(play: PlayView): string {
       <p class="quiet">Best weapon in the pack: ${esc(sighting.weaponName)}.</p>
       <div class="modal-actions">
         ${play.actions.map(renderAction).join("")}
+      </div>
+    </article>
+  </div>`;
+}
+
+function renderCraft(craft: CraftView): string {
+  const slots = craft.slots
+    .map((slot) => {
+      const options = slot.options
+        .map((option) => {
+          const pick = { type: "craft-pick", slot: slot.id, materialId: option.materialId };
+          const state = option.selected ? "selected" : option.have ? "" : "missing";
+          const attr = option.have && !option.selected ? `data-cmd="${cmd(pick)}"` : option.have ? "" : "disabled";
+          return `<button type="button" class="part ${state}" ${attr} aria-pressed="${option.selected}">
+            <b>${esc(option.name)}</b><small>${esc(option.have ? option.detail : "none in pack")}</small>
+          </button>`;
+        })
+        .join("");
+      return `<section class="slot ${slot.missing ? "empty" : ""}">
+        <h3>${esc(slot.label)}</h3>
+        <p class="rule">${esc(slot.rule)}</p>
+        ${slot.missing ? `<p class="slot-missing">${esc(slot.missing)}</p>` : ""}
+        <div class="parts">${options}</div>
+      </section>`;
+    })
+    .join("");
+  const go = craft.command
+    ? button(`<b>Craft · ${esc(craft.timeLabel)}</b><small>Uses the selected parts.</small>`, craft.command, "primary craft-go")
+    : `<button type="button" class="primary craft-go" disabled><b>Can't craft yet</b><small>${esc(craft.block ?? "")}</small></button>`;
+  return `<div class="overlay">
+    <article class="modal craft-modal">
+      <p class="eyebrow">${craft.known ? "Pattern in the journal" : "Untried pattern"} · handle + tool end + binding</p>
+      <h2>${esc(craft.toolName)}</h2>
+      <div class="slots">${slots}</div>
+      ${craft.summary.length ? `<ul class="craft-summary">${craft.summary.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>` : ""}
+      <div class="craft-actions">
+        ${go}
+        ${button("<b>Cancel</b><small>Keep the parts.</small>", { type: "close-craft" }, "ghost")}
       </div>
     </article>
   </div>`;
