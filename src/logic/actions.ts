@@ -878,7 +878,7 @@ export function previewLine(
   else if (end.bodyTempC <= data.needs.bodyTemp.coldSevereC) warning = "Hypothermia risk";
   else if (end.bodyTempC <= data.needs.bodyTemp.coldMildC) warning = "The cold will get in";
   const delta = end.health - state.health;
-  const health = delta < -1 ? ` · ${Math.round(-delta)} health` : delta >= 0.5 ? ` · +${delta.toFixed(1)} health` : "";
+  const health = delta < -1 ? ` · −${Math.round(-delta)} health` : delta >= 0.5 ? ` · +${delta.toFixed(1)} health` : "";
   return {
     detail: `${label ?? `${hours}h`} · about ${liters.toFixed(1)} L${health}`,
     warning,
