@@ -35,7 +35,7 @@
         "qty": 1
       },
       "killFatigue": 4,
-      "sightLog": "A dry rattle from the shade under a rock. A rattlesnake, coiled, deciding about you.",
+      "sightLog": "A dry rattle from under a rock. A rattlesnake, coiled, deciding about you.",
       "backAwayLog": "You step back slowly, then again. The rattle fades. Nothing gained, nothing lost.",
       "backAwayStrikeLog": "You step back and the snake decides anyway. A punch in the calf.",
       "killLog": "You pin it and finish it. Then you keep well clear of the head, which is still opening and closing.",
@@ -53,8 +53,8 @@
           "log": "You strip the sinew from its back and set it to dry. It will bind better than anything in the wreck."
         }
       ],
-      "ambushLog": "A buzz, then a punch in the calf. The snake is still there, coiled at the edge of the shade. Now you can see exactly where it is.",
-      "letGoLog": "You back off and let it have the shade. The bite comes with you."
+      "ambushLog": "A buzz, then a punch in the calf. The snake is still there, coiled against the rock. Now you can see exactly where it is.",
+      "letGoLog": "You back off and let it have the rock. The bite comes with you."
     },
     {
       "id": "scorpion",
@@ -204,7 +204,7 @@
       }
     }
   },
-  "spoilLog": "The {name} has turned in the heat. You leave it for the ants.",
+  "spoilLog": "The {name} has turned. Meat does not keep out here. You leave it for the ants.",
   "ambush": {
     "chance": 0.25,
     "killBonus": 0.15,

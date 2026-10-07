@@ -46,7 +46,7 @@ describe("sleep durations", () => {
         expect(ids.includes("sleep-dawn"), `${location} ${hour}`).toBe(dawn <= 10);
         for (const h of [2, 4, 6, 8]) expect(ids.includes(`sleep-${h}`), `${location} ${hour} ${h}h`).toBe(dawn > 10 || h < dawn);
         for (const a of sleeps(state)) expect(a.disabled).toBe(false);
-        expect(sleeps(state).every((a) => a.detail.includes("about"))).toBe(true);
+        expect(sleeps(state).every((a) => /^\d+h/.test(a.detail) && !a.detail.includes("0.0 L"))).toBe(true);
       }
     }
     const morning = sleeps(fresh({ hour: 7 })).map((a) => a.label);

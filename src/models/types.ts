@@ -134,6 +134,7 @@ export interface NeedsConfig {
     logOpen: string;
     logCamp: string;
     logWake: string;
+    logWakeCamp: string;
     warning: string;
     /** Fixed hours unconscious, from the moment of collapse, at any hour. */
     hours: number;
@@ -172,6 +173,7 @@ export interface WaitConfig {
   };
   logs: {
     waitOpen: string;
+    waitOpenNight: string;
     waitCamp: string;
     waitShelter: string;
     waitDone: string;
@@ -371,6 +373,8 @@ export interface ZoneDef {
   searchNeedsLight?: boolean;
   blurb: string;
   arriveLog: string;
+  /** First arrival after dark, when the day line would describe things you cannot see. */
+  arriveLogNight?: string;
   loot: LootEntry[];
 }
 
@@ -432,12 +436,33 @@ export interface LessonDef {
   lesson: string;
 }
 
+/** A dawn line that assumes camp and sleep; `away` / `awake` replace it when those are not true. */
+export interface DawnLine {
+  text: string;
+  away?: string;
+  awake?: string;
+}
+
+export interface MomentLines {
+  neutral: string;
+  night: string;
+  heat: string;
+}
+
+export interface TravelCopy {
+  leave: MomentLines;
+  back: MomentLines;
+  arrive: MomentLines;
+  injury: { ankle: string; snakebite: string; wound: string };
+}
+
 export interface CopyConfig {
   title: string;
   tagline: string;
   standingOrders: string[];
   opening: string[];
-  dawnLines: string[];
+  dawnLines: (string | DawnLine)[];
+  travel: TravelCopy;
   schematic: { id: string; name: string; text: string };
   nothingLog: string;
   knownFindLog: string;

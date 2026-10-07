@@ -32,6 +32,7 @@ import {
   carryBlock,
 } from "./crafting.ts";
 import { resolveDawn } from "./dawn.ts";
+import { arriveCampLine, momentAt, spansDark, travelLine } from "./flavor.ts";
 import { applyEffect } from "./effects.ts";
 import { finishIfEnded } from "./ending.ts";
 import { applyHazard, rollHazards } from "./hazards.ts";
@@ -263,7 +264,7 @@ export function collapse(state: RunState, journal: Journal, data: GameData, rng:
     rng,
   );
   if (step.state.phase !== "ended" && !camp) step = rollLyingHazards(step, spec.hazards, data, rng);
-  if (step.state.phase !== "ended") step = { ...step, state: pushLog(step.state, spec.logWake) };
+  if (step.state.phase !== "ended") step = { ...step, state: pushLog(step.state, camp ? spec.logWakeCamp : spec.logWake) };
   if (step.state.phase === "ended" && !step.state.ending) {
     step = { ...step, state: { ...step.state, pendingCause: "exhaustion" } };
   }
@@ -303,11 +304,18 @@ function dispatch(
   }
 }
 
+function restOpener(state: RunState, camp: boolean, data: GameData): string {
+  const night = momentAt(state.hour, data) === "night";
+  if (camp && state.camp.shelter) return night ? "You crawl into the shelter and rest." : "You crawl into the shelter, out of the sun.";
+  if (camp) return night ? "You settle against the wreck and rest." : "You get out of the sun and wait.";
+  return night ? "You find a rock to put your back against and rest." : "You take the shade the rocks will give you.";
+}
+
 function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
   const hours = data.needs.restHours;
   const camp = atCamp(state);
   let step = runHours(
-    pushLog(state, camp ? "You get out of the sun and wait." : "You take the shade the rocks will give you."),
+    pushLog(state, restOpener(state, camp, data)),
     journal,
     hours,
     contextFor("rest", camp),
@@ -321,8 +329,12 @@ function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): Step
     state: pushLog(
       step.state,
       sheltered
-        ? "The shelter holds a cooler dark. Thirst slows down in here."
-        : "Shade is not safety, but it is cheaper than walking.",
+        ? momentAt(state.hour, data) === "night"
+          ? "The shelter keeps the wind off. The body takes what rest it can."
+          : "The shelter holds a cooler dark. Thirst slows down in here."
+        : momentAt(state.hour, data) === "night"
+          ? "Sitting still is not safety, but it is cheaper than walking."
+          : "Shade is not safety, but it is cheaper than walking.",
     ),
   };
   return { ...step, state: rollSighting(step.state, data, rng, "rest") };
@@ -343,7 +355,7 @@ function sleep(state: RunState, journal: Journal, hoursRequested: number | undef
   if (hours < 1 || hours > 24) return fail(state, journal, "Dawn is too far off to sleep straight through. Pick a length.");
   if (!atCamp(state)) return sleepOpen(state, journal, hours, data, rng);
   const cold =
-    !state.camp.shelter && !state.camp.firePit
+    !state.camp.shelter && !state.camp.firePit && spansDark(state.hour, hours, data)
       ? " The wreck will only blunt the night, not stop it."
       : "";
   return runHours(
@@ -389,7 +401,9 @@ function wait(
   if (hours < 1 || hours > 24) return fail(state, journal, "Wait how long?");
   const camp = atCamp(state);
   const logs = data.needs.wait.logs;
-  const opener = !camp ? logs.waitOpen : state.camp.shelter ? logs.waitShelter : logs.waitCamp;
+  const opener = !camp
+    ? momentAt(state.hour, data) === "night" ? logs.waitOpenNight : logs.waitOpen
+    : state.camp.shelter ? logs.waitShelter : logs.waitCamp;
   const step = runHours(pushLog(state, opener), journal, hours, contextFor("wait", camp), data, rng);
   if (step.state.phase === "ended") return step;
   return { ...step, state: rollSighting(pushLog(step.state, logs.waitDone), data, rng, "rest") };
@@ -410,7 +424,7 @@ function travel(
   if (!zone) return { state, journal };
   const plan = planAction(state, travelCost(state, zone.travelHours), data, { useTorch: true });
   let step = runHours(
-    withSlowNote(lightTorch(pushLog(state, `You leave camp for the ${zone.name}.`), plan), plan),
+    withSlowNote(lightTorch(pushLog(state, travelLine("leave", state, data, { zone: zone.name, hours: plan.hours })), plan), plan),
     journal,
     plan.hours,
     contextFor("travel", false, zone.exposure),
@@ -429,7 +443,7 @@ function travel(
   };
   step = {
     ...step,
-    state: pushLog(step.state, first ? zone.arriveLog : `You are back at the ${zone.name}.`),
+    state: pushLog(step.state, first ? (momentAt(step.state.hour, data) === "night" && zone.arriveLogNight ? zone.arriveLogNight : zone.arriveLog) : `You are back at the ${zone.name}.`),
   };
   step = rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id, plan);
   if (step.state.phase === "ended") return step;
@@ -443,7 +457,7 @@ function travelBack(state: RunState, journal: Journal, data: GameData, rng: Rng)
   const plan = planAction(state, travelCost(state, zone.travelHours), data, { useTorch: true });
   let step = runHours(
     withSlowNote(
-      lightTorch(pushLog(state, `You turn back toward the wreck. ${plan.hours} hours, if the ankle and the sun agree.`), plan),
+      lightTorch(pushLog(state, travelLine("back", state, data, { hours: plan.hours })), plan),
       plan,
     ),
     journal,
@@ -454,8 +468,15 @@ function travelBack(state: RunState, journal: Journal, data: GameData, rng: Rng)
   );
   if (step.state.phase === "ended") return step;
   step = { ...step, state: { ...step.state, location: "camp" } };
-  step = { ...step, state: pushLog(step.state, "The fuselage comes up out of the glare. Camp, such as it is.") };
+  step = { ...step, state: pushLog(step.state, arriveCampLine(step.state, data)) };
   return rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id, plan);
+}
+
+function cabinSearchLine(state: RunState, data: GameData): string {
+  const moment = momentAt(state.hour, data);
+  if (moment === "heat") return "You pick through the cabin, hands slow in the heat.";
+  if (moment === "night") return "You pick through the cabin in the dark, by whatever light you have.";
+  return "You pick through the cabin.";
 }
 
 function searchPlan(state: RunState, data: GameData): ActionPlan {
@@ -477,7 +498,7 @@ function search(state: RunState, journal: Journal, data: GameData, rng: Rng): St
   let step = runHours(
     withSlowNote(
       lightTorch(
-        pushLog(state, camp ? "You pick through the cabin, hands slow in the heat." : `You search the ${zone?.name ?? "ground"}.`),
+        pushLog(state, camp ? cabinSearchLine(state, data) : `You search the ${zone?.name ?? "ground"}.`),
         plan,
       ),
       plan,
@@ -1059,13 +1080,18 @@ export function previewLine(
   let warning = "";
   if (end.fatigue >= data.needs.fatigue.collapseAt && !ctx.collapsed) warning = data.needs.collapse.warning;
   else if (end.bodyTempC >= data.needs.bodyTemp.heatSevereC) warning = "Heat stroke risk";
-  else if (end.bodyTempC >= data.needs.bodyTemp.heatMildC) warning = "You will overheat";
+  else if (end.bodyTempC >= data.needs.bodyTemp.heatMildC) {
+    warning = end.bodyTempC < state.bodyTempC ? "Still overheated, cooling slowly" : "You will overheat";
+  }
   else if (end.bodyTempC <= data.needs.bodyTemp.coldSevereC) warning = "Hypothermia risk";
-  else if (end.bodyTempC <= data.needs.bodyTemp.coldMildC) warning = "The cold will get in";
+  else if (end.bodyTempC <= data.needs.bodyTemp.coldMildC) {
+    warning = end.bodyTempC > state.bodyTempC ? "Still chilled, warming slowly" : "The cold will get in";
+  }
   const delta = end.health - state.health;
   const health = delta < -1 ? ` · −${Math.round(-delta)} health` : delta >= 0.5 ? ` · +${delta.toFixed(1)} health` : "";
   return {
-    detail: `${label ?? `${hours}h`} · about ${liters.toFixed(1)} L${health}`,
+    // Under 0.05 L rounds to "0.0 L", which reads like a bug. Say nothing instead.
+    detail: `${label ?? `${hours}h`}${liters >= 0.05 ? ` · about ${liters.toFixed(1)} L` : ""}${health}`,
     warning,
   };
 }
@@ -1177,7 +1203,7 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
 
   const restHours = data.needs.restHours;
   const restPreview = previewLine(state, restHours, contextFor("rest", camp), data);
-  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", restPreview.detail, restPreview.warning, false, { type: "rest" }));
+  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : momentAt(state.hour, data) === "night" ? "Rest" : "Rest in shade", restPreview.detail, restPreview.warning, false, { type: "rest" }));
 
   actions.push(...sleepButtons(state, data));
 

@@ -5,6 +5,7 @@ import { applyHazard } from "./hazards.ts";
 import { addItem } from "./inventory.ts";
 import { learnHazard, noteRunHazard, runNumber } from "./journal.ts";
 import { pushLog } from "./log.ts";
+import { dawnLineFor } from "./flavor.ts";
 import type { Rng } from "./rng.ts";
 import { effectiveRescueDay } from "./rescue.ts";
 import { clamp, round2 } from "./util.ts";
@@ -85,7 +86,11 @@ export function resolveDawn(
     }
   }
 
-  const dawnLine = data.copy.dawnLines[(current.day - 1) % data.copy.dawnLines.length] ?? "";
+  const dawnLine = dawnLineFor(
+    data.copy.dawnLines[(current.day - 1) % data.copy.dawnLines.length],
+    ctx.atCamp && current.location === "camp",
+    ctx.activity === "sleep",
+  );
   current = pushLog(current, `Day ${current.day}. ${dawnLine}`);
 
   const effective = effectiveRescueDay(

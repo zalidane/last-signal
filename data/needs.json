@@ -161,7 +161,7 @@
       "moralePerHour": -0.6,
       "hazardChance": 0.12,
       "hazardId": "scorpion",
-      "hazardLog": "You wake to a hot nail in the wrist. Out here the night has tenants, and you slept in their house.",
+      "hazardLog": "You wake to a hot nail in the wrist. Out here the ground has tenants, and you slept in their house.",
       "fullNightHours": 10
     },
     "logs": {
@@ -170,7 +170,8 @@
       "waitShelter": "You wait it out in the shelter.",
       "waitDone": "Waiting is a choice. The desert charges for it like any other.",
       "sleepOpen": "You scrape a hollow in the gravel and lie down in the open. Nothing between you and the sky.",
-      "sleepOpenDone": "You come up stiff and gritty. It was sleep, mostly."
+      "sleepOpenDone": "You come up stiff and gritty. It was sleep, mostly.",
+      "waitOpenNight": "You sit where you are and let the clock do the walking. Nothing out here to put your back against."
     }
   },
   "strain": {
@@ -317,11 +318,12 @@
       }
     ],
     "logOpen": "Your legs stop asking permission. You go down where you stand, in the open, and the world goes out.",
-    "logCamp": "You make it as far as the wreck and no farther. You are asleep before you finish falling.",
-    "logWake": "You come to ten hours later, stiff, sunk in the gravel, unsure how long you were gone.",
+    "logCamp": "You sit down against the wreck and do not get up. You are asleep before you finish falling.",
+    "logWake": "You come to stiff and sunk in the gravel, ten hours gone.",
     "warning": "Collapse: you'll be out for 10 hours",
     "hours": 10,
-    "openDayDeltaC": 0
+    "openDayDeltaC": 0,
+    "logWakeCamp": "You come to against the wreck, stiff, ten hours gone."
   },
   "sleep": {
     "hourOptions": [

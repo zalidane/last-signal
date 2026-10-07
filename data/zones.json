@@ -124,7 +124,8 @@
         "qty": 0
       }
     ],
-    "searchNeedsLight": false
+    "searchNeedsLight": false,
+    "arriveLogNight": "The wreckage field is a dark scatter of metal that clinks underfoot. Close to camp. By day there is no shade here you would trust at noon."
   },
   {
     "id": "dry-wash",
@@ -323,6 +324,7 @@
         "qty": 0
       }
     ],
-    "searchNeedsLight": true
+    "searchNeedsLight": true,
+    "arriveLogNight": "The ridge is a black edge against the stars. Below, the wreck is lost in the dark. Anything searching from the air would miss it too, without smoke."
   }
 ]

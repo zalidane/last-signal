@@ -14,12 +14,21 @@
     "There is no tower in your ear and no date on the rescue. If you die, the only thing you can send ahead is what you learned."
   ],
   "dawnLines": [
-    "The metal ticks as the sun finds it.",
+    {
+      "text": "The metal ticks as the sun finds it.",
+      "away": "The rocks tick as the sun finds them."
+    },
     "Dawn is a gray mercy that will not last.",
     "The horizon is a blade. Nothing on it is coming yet.",
-    "You wake with sand in your teeth and the same job as yesterday.",
+    {
+      "text": "You wake with sand in your teeth and the same job as yesterday.",
+      "awake": "Sand in your teeth and the same job as yesterday."
+    },
     "The sky is empty and very large.",
-    "Night lets go of the camp one degree at a time."
+    {
+      "text": "Night lets go of the camp one degree at a time.",
+      "away": "Night lets go of the desert one degree at a time."
+    }
   ],
   "schematic": {
     "id": "solar-still",
@@ -29,5 +38,27 @@
   "nothingLog": "Dust, rivets, and nothing you can carry.",
   "knownFindLog": "You know this one. {name}. The journal already argued with your hands.",
   "journalPreface": "Stats do not carry over. This does. Every entry was paid for by somebody, once.",
-  "classified": "Rescue window classified"
+  "classified": "Rescue window classified",
+  "travel": {
+    "leave": {
+      "neutral": "You leave camp for the {zone}.",
+      "night": "You leave camp for the {zone} in the dark. The cold walks with you.",
+      "heat": "You leave camp for the {zone} with the sun already on your back."
+    },
+    "back": {
+      "neutral": "You turn back toward the wreck. {hours} hours, if the ground agrees.",
+      "night": "You turn back toward the wreck. {hours} hours, if the dark and the cold agree.",
+      "heat": "You turn back toward the wreck. {hours} hours, if the sun agrees."
+    },
+    "arrive": {
+      "neutral": "The fuselage comes up over the flat. Camp, such as it is.",
+      "night": "The fuselage comes up out of the dark, a blacker shape against the stars. Camp, such as it is.",
+      "heat": "The fuselage comes up out of the glare. Camp, such as it is."
+    },
+    "injury": {
+      "ankle": " The ankle argues with every step.",
+      "snakebite": " The bite in your calf keeps its own time.",
+      "wound": " The {wound} throbs with every step."
+    }
+  }
 }

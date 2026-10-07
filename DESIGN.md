@@ -246,3 +246,11 @@ Health, supplies, buildings, injuries, and the seed's rescue day. A new run is a
 
 ### Dawn while awake (v8)
 Crossing 06:00 always rolls the day: day++, the "Day N." line (logged before any day events), stills, signal-fire fuel, rescue check, sandstorm roll. Night events that assume you are in the blankets (the no-fire scorpion visitor) fire only if you were **sleeping at camp** when the clock crossed dawn. Travelling, searching, waiting, or building through dawn never triggers them; awake animal encounters go through the v7 sighting prompt instead. A dawn sandstorm only counts the shelter if you are at camp, so a storm that catches you mid-walk hits you in the open.
+
+### Flavor text tells the truth (v9)
+Log lines must not assert a state that is not true. `src/logic/flavor.ts` picks variants:
+- **Travel** (`copy.travel`): leave / return / arrive-at-camp lines have `neutral`, `night` (dark hours: dark and cold, never sun), and `heat` (hot/extreme bands: sun) variants. An injury aside is appended only if the survivor has it: sprain → ankle, snakebite → the bite, other wounds → "the {condition} throbs".
+- **Dawn lines** may be objects with `away` (not at camp) and `awake` (not sleeping) replacements, so walking through dawn never says "you wake" or "the camp".
+- **Zones** may carry `arriveLogNight` for first arrivals after dark.
+- Rest/wait/search openers and the rest button label swap sun/shade wording for night wording; the "wreck will only blunt the night" sleep line appears only if the sleep covers dark hours; collapse wake text differs at camp.
+- **Previews**: water is hidden under 0.05 L (it rounded to a misleading "0.0 L"). A cold/heat warning when the body is already recovering reads "Still chilled, warming slowly" / "Still overheated, cooling slowly" rather than "The cold will get in". Health in a preview equals what the action actually costs (tested).

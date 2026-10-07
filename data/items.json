@@ -12,7 +12,7 @@
     "name": "Ration pack",
     "category": "food",
     "blurb": "Crash rations. Dry, salty, and more useful than pride.",
-    "foundLog": "A ration pack, foil still intact, warm from the sun."
+    "foundLog": "A ration pack, foil still intact."
   },
   {
     "id": "cloth",
