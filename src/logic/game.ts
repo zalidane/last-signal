@@ -7,12 +7,21 @@ import { createRun } from "./setup.ts";
 import { projectView, type UiFlags } from "./view.ts";
 
 export const SESSION_KEY = "last-signal.session.v1";
+/** Format 2 (game v3): work-hour budget removed; pending sightings and meat spoilage added. */
+export const SESSION_VERSION = 2;
+export const OLD_SAVE_NOTICE =
+  "Your last run was saved by an older version of the game and could not be resumed. The journal came through intact.";
 
 interface SessionFile {
-  version: 1;
+  version: number;
   state: RunState;
   rngState: number;
   ui: UiFlags;
+}
+
+function isCurrentState(state: RunState): boolean {
+  const record = state as unknown as Record<string, unknown>;
+  return "pending" in record && "spoil" in record && !("laborHours" in record);
 }
 
 export class Game {
@@ -92,7 +101,7 @@ export class Game {
       return;
     }
     const file: SessionFile = {
-      version: 1,
+      version: SESSION_VERSION,
       state: this.state,
       rngState: this.rng.getState(),
       ui: this.ui,
@@ -105,7 +114,11 @@ export class Game {
     if (!raw) return;
     try {
       const file = JSON.parse(raw) as SessionFile;
-      if (file.version !== 1 || !file.state) return;
+      if (file.version !== SESSION_VERSION || !file.state || !isCurrentState(file.state)) {
+        this.sessionStore.removeItem(SESSION_KEY);
+        this.ui = { journalOpen: false, itemId: null, notice: OLD_SAVE_NOTICE };
+        return;
+      }
       this.state = file.state;
       this.ui = file.ui ?? { journalOpen: false, itemId: null };
       this.rng = makeRng(file.state.seed || 1);

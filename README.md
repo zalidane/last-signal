@@ -22,7 +22,9 @@ npm run build
 
 ## How to play
 
-The day starts at 06:00. Work hours reset at dawn and shrink when you are thirsty, hungry, exhausted, injured, or sick. Rest and sleep do not spend work hours. They do spend clock time, water, and calories.
+The day starts at 06:00. There is no work-hour budget: every action costs clock time and fatigue. Tired (60) and exhausted (85) survivors work slower and get hurt more; at 100 fatigue you collapse where you stand until dawn. Night (19:00–06:00) slows everything and wakes snakes and scorpions; some work needs a fire or a torch. Rest, sleep, and waiting heal slowly if you are fed, watered, warm, and not bleeding.
+
+- In the wash and on the ridge you may meet a rattlesnake or a scorpion. Back away, or try to kill it: a knife, club, or spear makes that far safer. Cook the meat on the fire pit; raw meat can make you sick.
 
 - Search the cabin, then the wreckage field (1h), the dry wash (3h), and the rocky ridge (5h). Farther walks cost more water and roll worse hazards.
 - Midday air is about 53°C. Do the walking at dawn or dusk. Sit in shade, or in a shelter, through the middle of the day.

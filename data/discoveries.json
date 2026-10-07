@@ -7,15 +7,27 @@
     "unknownBlurb": "The pulp looks wet. Thirst wants a vote.",
     "summary": "A trap. The pulp sets off vomiting and diarrhea and spends more water than it gives.",
     "safe": false,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "ignore"
+    ],
     "eat": {
       "hunger": 4,
       "hydration": 10,
       "morale": -8,
       "addConditions": [
-        { "id": "vomiting", "hours": 10 },
-        { "id": "diarrhea", "hours": 18 }
+        {
+          "id": "vomiting",
+          "hours": 10
+        },
+        {
+          "id": "diarrhea",
+          "hours": 18
+        }
       ],
       "learn": true,
       "log": "It tastes like green water. Then your stomach turns inside out, and keeps turning.",
@@ -26,7 +38,12 @@
       "hydration": -4,
       "health": -1,
       "morale": -2,
-      "addConditions": [{ "id": "nausea", "hours": 4 }],
+      "addConditions": [
+        {
+          "id": "nausea",
+          "hours": 4
+        }
+      ],
       "learn": true,
       "log": "You taste a finger of pulp and spit. Your mouth goes dry anyway. This is not water.",
       "journal": "A taste of barrel cactus numbs the tongue and turns the stomach. It is a famous trap. Leave the ribs alone."
@@ -42,8 +59,16 @@
     "safe": true,
     "countsAs": "pear",
     "overeatAt": 3,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["eat", "prepare", "ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "eat",
+      "prepare",
+      "ignore"
+    ],
     "eat": {
       "hunger": 14,
       "hydration": 4,
@@ -70,11 +95,17 @@
         "hunger": 8,
         "hydration": 3,
         "morale": 3,
-        "log": "Over the fire pit the pad softens. It eats like a real meal."
+        "log": "Over the fire pit the pad softens. It eats like a real meal.",
+        "health": 2
       }
     },
     "overeat": {
-      "addConditions": [{ "id": "stomach", "hours": 10 }],
+      "addConditions": [
+        {
+          "id": "stomach",
+          "hours": 10
+        }
+      ],
       "morale": -3,
       "log": "That was one pad too many. Your gut cramps around the oxalate."
     }
@@ -87,13 +118,24 @@
     "unknownBlurb": "Translucent berries. They look like the first kind thing you have seen.",
     "summary": "Poisonous. Nausea, vomiting, and a real bite out of your health. Not food.",
     "safe": false,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "ignore"
+    ],
     "eat": {
       "hunger": 6,
       "health": -14,
       "morale": -6,
-      "addConditions": [{ "id": "vomiting", "hours": 8 }],
+      "addConditions": [
+        {
+          "id": "vomiting",
+          "hours": 8
+        }
+      ],
       "learn": true,
       "log": "The berries burst sweet, then wrong. Your pulse climbs and you lose what water you had in you.",
       "journal": "Desert mistletoe berries are poisonous. They look edible. They are not. Vomiting follows, and the health loss is not subtle."
@@ -102,7 +144,12 @@
       "hours": 1,
       "health": -4,
       "hydration": -2,
-      "addConditions": [{ "id": "nausea", "hours": 5 }],
+      "addConditions": [
+        {
+          "id": "nausea",
+          "hours": 5
+        }
+      ],
       "learn": true,
       "log": "One berry, crushed, tastes like cough syrup and metal. You spit until your tongue behaves.",
       "journal": "A single desert mistletoe berry is enough to prove the cluster. Poison. Do not eat them, however hungry the color looks."
@@ -116,13 +163,25 @@
     "unknownBlurb": "They smell like tar and rain. Medicine, tea, or a mistake.",
     "summary": "Not food. A cooled poultice calms sunburn. Swallowing the leaves makes you sick.",
     "safe": false,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["poultice", "ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "poultice",
+      "ignore"
+    ],
     "eat": {
       "hunger": 2,
       "health": -7,
       "morale": -4,
-      "addConditions": [{ "id": "nausea", "hours": 6 }],
+      "addConditions": [
+        {
+          "id": "nausea",
+          "hours": 6
+        }
+      ],
       "learn": true,
       "log": "You chew a sprig. It is bitter enough to feel like a punishment, and your stomach agrees.",
       "journal": "Creosote is not food. The leaves are bitter and nauseating if you swallow them. On the skin, a poultice eases sunburn."
@@ -148,8 +207,16 @@
     "unknownBlurb": "Hard pods from a thorn tree. They might be empty. They might not.",
     "summary": "The sweet pith is calories. Pounded or chewed long, they are a real meal. The fiber alone is a poor one.",
     "safe": true,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["eat", "prepare", "ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "eat",
+      "prepare",
+      "ignore"
+    ],
     "eat": {
       "hunger": 12,
       "morale": 1,
@@ -173,7 +240,8 @@
       "fireBonus": {
         "hunger": 4,
         "morale": 2,
-        "log": "Warmed over the coals, the pith almost tastes kind."
+        "log": "Warmed over the coals, the pith almost tastes kind.",
+        "health": 2
       }
     }
   },
@@ -185,12 +253,25 @@
     "unknownBlurb": "Water that has been lying in the wash. Your thirst does not care about the color.",
     "summary": "Contaminated. Boil it on the fire pit and it becomes half a liter of real water. Drunk raw, it hydrates you and then the diarrhea spends it.",
     "safe": false,
-    "unknownActions": ["eat", "ignore", "experiment"],
-    "knownActions": ["boil", "eat", "ignore"],
+    "unknownActions": [
+      "eat",
+      "ignore",
+      "experiment"
+    ],
+    "knownActions": [
+      "boil",
+      "eat",
+      "ignore"
+    ],
     "eat": {
       "hydration": 18,
       "morale": -2,
-      "addConditions": [{ "id": "diarrhea", "hours": 14 }],
+      "addConditions": [
+        {
+          "id": "diarrhea",
+          "hours": 14
+        }
+      ],
       "learn": true,
       "log": "You drink the seep. For an hour you feel saved. Then your gut starts giving the water back.",
       "journal": "Wash seep water is contaminated. Drunk raw it loans you hydration and then collects, with interest, as diarrhea. Boil it on a fire before it touches your mouth."
@@ -198,7 +279,12 @@
     "experiment": {
       "hours": 1,
       "hydration": -2,
-      "addConditions": [{ "id": "nausea", "hours": 3 }],
+      "addConditions": [
+        {
+          "id": "nausea",
+          "hours": 3
+        }
+      ],
       "learn": true,
       "log": "A sip tastes like metal and animals. You spit. This water needs a fire before it is water.",
       "journal": "Seep water must be boiled. A taste is enough to know it is dirty. With a fire pit it becomes drinkable. Without one it is a trap with a wet face."

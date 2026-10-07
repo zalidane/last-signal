@@ -70,10 +70,10 @@ p { margin: 0; }
 .play-shell[data-band="hot"] { background: radial-gradient(900px 240px at 50% 0%, rgba(226, 168, 74, 0.14), transparent 60%); }
 .top { display: flex; gap: 1rem; align-items: center; justify-content: space-between; }
 .brand strong { font-family: Fraunces, serif; font-size: 1.6rem; }
-.clock, .hours { display: grid; min-width: 7rem; }
-.clock b, .hours b { font-family: Fraunces, serif; font-size: 1.8rem; font-variant-numeric: tabular-nums; line-height: 1; }
-.clock span, .hours span { color: var(--muted); font-size: 0.82rem; }
-.clock[data-band="extreme"] b, .hours.low b { color: var(--danger); }
+.clock, .hours, .pace { display: grid; min-width: 7rem; }
+.clock b, .hours b, .pace b { font-family: Fraunces, serif; font-size: 1.8rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.clock span, .hours span, .pace span { color: var(--muted); font-size: 0.82rem; }
+.clock[data-band="extreme"] b, .hours.low b, .pace.low b { color: var(--danger); }
 .clock[data-band="cold"] b { color: var(--cold); }
 .clock[data-band="hot"] b { color: var(--warn); }
 .top-actions { display: flex; gap: 0.4rem; }
@@ -176,3 +176,11 @@ p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto; }
 }
+
+.light { font-size: 0.75rem; }
+.light.dark { color: var(--cold); }
+.pace-notes { margin: 0.8rem 0 0; padding-left: 1rem; color: var(--muted); font-size: 0.86rem; display: grid; gap: 0.25rem; }
+.notice { margin: 0.6rem 0; }
+.sighting { border-color: var(--warn); max-width: 30rem; }
+.sighting .modal-actions .action { width: 100%; text-align: left; }
+.play-shell[data-dark="1"] .stage { filter: brightness(0.92) saturate(0.9); }

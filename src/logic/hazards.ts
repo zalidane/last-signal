@@ -3,7 +3,7 @@ import { applyEffect } from "./effects.ts";
 import { hurt } from "./effects.ts";
 import { learnHazard, noteRunHazard, runNumber } from "./journal.ts";
 import { pushLog } from "./log.ts";
-import { reconcileLabor } from "./needs.ts";
+import { darkHazardMult, type ActionPlan } from "./pace.ts";
 import { bandAt } from "./time.ts";
 import { clamp } from "./util.ts";
 
@@ -16,7 +16,7 @@ export function applyHazard(
   state: RunState,
   journal: Journal,
   hazard: HazardDef,
-  data: GameData,
+  _data: GameData,
   log?: string,
 ): { state: RunState; journal: Journal } {
   let next = pushLog(state, log ?? hazard.log);
@@ -49,10 +49,6 @@ export function applyHazard(
   if (hazard.sprainHours) {
     next = { ...next, sprainHours: Math.min(96, next.sprainHours + hazard.sprainHours) };
   }
-  if (next.phase !== "ended") {
-    const reconciled = reconcileLabor(next, data);
-    next = reconciled.note ? pushLog(reconciled.state, reconciled.note) : reconciled.state;
-  }
   return { state: next, journal };
 }
 
@@ -78,6 +74,7 @@ export function rollHazards(
   activity: "travel" | "search",
   atCamp: boolean,
   locationId: string,
+  plan?: Pick<ActionPlan, "dark" | "light" | "risk">,
 ): { state: RunState; journal: Journal } {
   if (state.phase === "ended") return { state, journal };
   const tags = exposureTags(activity, atCamp);
@@ -91,6 +88,8 @@ export function rollHazards(
     let chance = hazard.chance[locationId] ?? 0;
     const bandScale = hazard.bandChance?.[band.id];
     if (bandScale !== undefined) chance *= bandScale;
+    if (plan) chance *= plan.risk * darkHazardMult(hazard.id, plan, data);
+    chance = Math.min(chance, 0.95);
     if (chance <= 0) continue;
     if (rng.next() >= chance) continue;
     const applied = applyHazard(current, journal, hazard, data);

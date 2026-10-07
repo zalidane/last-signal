@@ -12,13 +12,17 @@ import type {
 import { buildItemModal, listActions } from "./actions.ts";
 import { presentItem } from "./inventory.ts";
 import { journalCompletion } from "./journal.ts";
-import { computeBudget } from "./needs.ts";
+import { regenBlockers } from "./needs.ts";
+import { lightAt, paceMultiplier } from "./pace.ts";
+import { bestWeapon, killOdds } from "./wildlife.ts";
 import { bandAt } from "./time.ts";
 import { formatHour, formatStamp } from "./util.ts";
 
 export interface UiFlags {
   journalOpen: boolean;
   itemId: string | null;
+  /** One-time message for the title screen, e.g. an old save that could not be resumed. */
+  notice?: string | null;
 }
 
 const CATEGORY_ORDER = ["water", "food", "discovery", "medical", "tool", "material"];
@@ -73,7 +77,17 @@ function stillDetail(state: RunState, data: GameData): string {
 export function projectPlay(state: RunState, journal: Journal, data: GameData): PlayView {
   const band = bandAt(state.hour, data.biome);
   const tier = campTier(state);
-  const forecast = computeBudget(state, data);
+  const pace = paceMultiplier(state, data, false);
+  const light = lightAt(state, data);
+  const blockers = regenBlockers(state, data);
+  const paceNotes = [...pace.notes];
+  paceNotes.push(
+    blockers.length
+      ? `No healing while ${blockers.join(", ")}.`
+      : "Resting, sleeping, or waiting will slowly heal you.",
+  );
+  const animal = state.pending ? data.animalById.get(state.pending.animalId) : undefined;
+  const weapon = bestWeapon(state, data);
   const heat = thermal(state, data);
   const zone = state.location === "camp" ? null : data.zoneById.get(state.location);
   const meters: MeterView[] = [
@@ -168,11 +182,22 @@ export function projectPlay(state: RunState, journal: Journal, data: GameData): 
     locationId: state.location,
     locationName: zone?.name ?? data.camp.name,
     locationBlurb: zone?.blurb ?? data.camp.blurb,
-    laborHours: state.laborHours,
-    laborMax: state.laborMax,
-    laborNotes: state.laborNotes,
-    forecastHours: forecast.hours,
-    forecastNotes: forecast.notes,
+    pace: {
+      mult: Math.round(pace.mult * 100) / 100,
+      label: pace.mult <= 1.001 ? "Steady" : `×${pace.mult.toFixed(2)}`,
+      notes: paceNotes,
+    },
+    dark: light !== "day",
+    lightLabel:
+      light === "day" ? "Daylight" : light === "fire" ? "Dark · fire pit lit" : light === "torch" ? "Dark · torch in pack" : "Dark · no light",
+    sighting: animal
+      ? {
+          animalName: animal.name,
+          text: animal.sightLog,
+          weaponName: weapon.name,
+          killOdds: killOdds(state, animal, weapon, data),
+        }
+      : null,
     meters,
     conditions: state.conditions.map((condition) => {
       const name = data.conditions[condition.id]?.name ?? condition.id;
@@ -251,6 +276,7 @@ export function projectView(
   const play = state ? projectPlay(state, journal, data) : null;
   return {
     screen,
+    notice: ui.notice ?? null,
     journalOpen: ui.journalOpen,
     title: data.copy.title,
     tagline: data.copy.tagline,

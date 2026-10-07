@@ -47,8 +47,6 @@ describe("journal persistence and identification", () => {
   it("hides the meal button once a trap is known, and shows the still once the schematic is", () => {
     const state = createRun(gameData, emptyJournal(), makeRng(5), 5);
     state.hour = 6;
-    state.laborHours = 12;
-    state.laborMax = 12;
     state.location = "camp";
     state.inventory = { ...state.inventory, "barrel-cactus": 1, "plastic-sheet": 1, container: 1, tubing: 1 };
 

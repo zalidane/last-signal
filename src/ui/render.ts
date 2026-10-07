@@ -21,10 +21,11 @@ export function render(view: ViewModel): string {
     return `<div class="shell title-shell">${renderTitle(view)}${renderJournal(view)}${renderModal(view)}</div>`;
   }
   const band = view.play?.bandId ?? "mild";
-  return `<div class="shell play-shell" data-band="${band}">
+  return `<div class="shell play-shell" data-band="${band}" data-dark="${view.play?.dark ? "1" : "0"}">
     ${view.play ? renderPlay(view.play, view.journal.stats.runs) : ""}
     ${renderJournal(view)}
     ${renderModal(view)}
+    ${view.play?.sighting && view.screen === "play" && !view.journalOpen ? renderSighting(view.play) : ""}
     ${view.screen === "end" && view.end && !view.journalOpen ? renderEnd(view) : ""}
   </div>`;
 }
@@ -37,6 +38,7 @@ function renderTitle(view: ViewModel): string {
       <p class="eyebrow">Field study · Sonoran scrub</p>
       <h1>${esc(view.title)}</h1>
       <p class="tagline">${esc(view.tagline)}</p>
+      ${view.notice ? `<p class="banner notice">${esc(view.notice)}</p>` : ""}
       <ul class="orders">
         ${view.standingOrders.map((line) => `<li>${esc(line)}</li>`).join("")}
       </ul>
@@ -76,10 +78,11 @@ function renderPlay(play: PlayView, priorRuns: number): string {
       <div class="clock" data-band="${play.bandId}">
         <b>${esc(play.hourLabel)}</b>
         <span>${esc(play.bandName)} · air ${play.airTempC}°C</span>
+        <span class="light ${play.dark ? "dark" : ""}">${esc(play.lightLabel)}</span>
       </div>
-      <div class="hours ${play.laborHours <= 4 ? "low" : ""}">
-        <b>${play.laborHours}h</b>
-        <span>work left today</span>
+      <div class="pace ${play.pace.mult >= 1.5 ? "low" : ""}" title="How much longer actions take right now">
+        <b>${esc(play.pace.label)}</b>
+        <span>action pace</span>
       </div>
       <div class="top-actions">
         ${button("Journal", { type: "open-journal" }, "ghost")}
@@ -95,13 +98,11 @@ function renderPlay(play: PlayView, priorRuns: number): string {
         ${renderInventory(play)}
         ${renderLog(play)}
       </section>
-      <aside class="act-col">${renderActions(play)}</aside>
+      <aside class="act-col">${play.sighting ? `<p class="quiet">Something is watching you. Decide first.</p>` : renderActions(play)}</aside>
     </div>`;
 }
 
 function renderMeters(play: PlayView): string {
-  const forecastWarn = play.forecastHours < 12 ? "warn" : "";
-  const notes = play.laborNotes.filter((note) => !note.startsWith("You are intact"));
   return `<div class="meter-block">
     ${play.meters
       .map(
@@ -113,7 +114,7 @@ function renderMeters(play: PlayView): string {
         </div>`,
       )
       .join("")}
-    <p class="forecast ${forecastWarn}"><b>Tomorrow, at this condition: ${play.forecastHours}h.</b> ${esc(play.forecastNotes.find((note) => !note.startsWith("You are intact")) ?? notes[0] ?? "A full day, if you can keep it.")}</p>
+    <ul class="pace-notes">${play.pace.notes.map((note) => `<li>${esc(note)}</li>`).join("")}</ul>
   </div>`;
 }
 
@@ -220,6 +221,22 @@ function renderAction(action: ActionButton): string {
     <small>${esc(action.detail)}</small>
     ${warning}
   </button>`;
+}
+
+function renderSighting(play: PlayView): string {
+  const sighting = play.sighting;
+  if (!sighting) return "";
+  return `<div class="overlay sighting-layer">
+    <article class="modal sighting">
+      <p class="eyebrow">Sighting · the clock stops</p>
+      <h2>${esc(sighting.animalName)}</h2>
+      <p>${esc(sighting.text)}</p>
+      <p class="quiet">Best weapon in the pack: ${esc(sighting.weaponName)}.</p>
+      <div class="modal-actions">
+        ${play.actions.map(renderAction).join("")}
+      </div>
+    </article>
+  </div>`;
 }
 
 function renderModal(view: ViewModel): string {

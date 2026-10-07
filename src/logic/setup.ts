@@ -1,7 +1,6 @@
 import type { GameData, Journal, RunState } from "../models/types.ts";
 import { addItem } from "./inventory.ts";
 import { pushLog } from "./log.ts";
-import { computeBudget } from "./needs.ts";
 import type { Rng } from "./rng.ts";
 import { rollRescueDay } from "./rescue.ts";
 import { clamp, round1, weightedIndex } from "./util.ts";
@@ -20,9 +19,6 @@ export function createRun(data: GameData, journal: Journal, rng: Rng, seed: numb
     seed,
     day: 1,
     hour: 6,
-    laborHours: data.needs.actionBudget.base,
-    laborMax: data.needs.actionBudget.base,
-    laborNotes: [],
     health: 100,
     hunger: Math.round(between(rng, data.starting.hunger[0], data.starting.hunger[1])),
     hydration: Math.round(between(rng, data.starting.hydration[0], data.starting.hydration[1])),
@@ -55,6 +51,8 @@ export function createRun(data: GameData, journal: Journal, rng: Rng, seed: numb
     sandstorm: false,
     nextStillId: 1,
     ending: null,
+    pending: null,
+    spoil: {},
   };
 
   let injuryLog: string | null = null;
@@ -109,19 +107,6 @@ export function createRun(data: GameData, journal: Journal, rng: Rng, seed: numb
     );
   }
 
-  const budget = computeBudget(state, data);
-  state = {
-    ...state,
-    laborHours: budget.hours,
-    laborMax: budget.hours,
-    laborNotes: budget.notes,
-  };
-  const reason = budget.notes.find((note) => note !== "You are intact. The day is full length.");
-  state = pushLog(
-    state,
-    reason
-      ? `Day 1. ${budget.hours} work hours. ${reason}`
-      : `Day 1. ${budget.hours} work hours before the sun and the night start arguing.`,
-  );
+  state = pushLog(state, "Day 1. No one is keeping hours for you. The sun and your own legs will.");
   return state;
 }

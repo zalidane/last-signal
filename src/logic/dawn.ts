@@ -5,7 +5,6 @@ import { applyHazard } from "./hazards.ts";
 import { addItem } from "./inventory.ts";
 import { learnHazard, noteRunHazard, runNumber } from "./journal.ts";
 import { pushLog } from "./log.ts";
-import { computeBudget } from "./needs.ts";
 import type { Rng } from "./rng.ts";
 import { effectiveRescueDay } from "./rescue.ts";
 import { clamp, round2 } from "./util.ts";
@@ -122,22 +121,7 @@ export function resolveDawn(
   }
 
   current = { ...current, sandstorm: storm };
-  const budget = computeBudget(current, data);
-  let hours = budget.hours;
-  const notes = [...budget.notes];
-  if (storm) {
-    hours = Math.max(data.needs.actionBudget.minimum, hours - stormDef.laborPenalty);
-    notes.push("A sandstorm is up. Part of the day is gone.");
-  }
-  current = { ...current, laborHours: hours, laborMax: hours, laborNotes: notes };
   const dawnLine = data.copy.dawnLines[(current.day - 1) % data.copy.dawnLines.length] ?? "";
   current = pushLog(current, `Day ${current.day}. ${dawnLine}`);
-  const reason = notes.find((note) => note !== "You are intact. The day is full length.");
-  current = pushLog(
-    current,
-    reason
-      ? `Work today: ${hours} hours. ${reason}`
-      : `Work today: ${hours} hours.`,
-  );
   return { state: current, journal };
 }

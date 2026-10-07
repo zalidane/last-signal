@@ -3,7 +3,6 @@ import { gameData } from "../src/models/content.ts";
 import type { Command, RunState } from "../src/models/types.ts";
 import { applyCommand, hasValidAction, listActions } from "../src/logic/actions.ts";
 import { emptyJournal } from "../src/logic/journal.ts";
-import { computeBudget } from "../src/logic/needs.ts";
 import { makeRng, type Rng } from "../src/logic/rng.ts";
 import { createRun } from "../src/logic/setup.ts";
 
@@ -20,15 +19,13 @@ function run(patch: Partial<RunState> = {}): RunState {
   return { ...state, ...patch, camp: { ...state.camp, ...patch.camp } };
 }
 
-/** Antonio's soft-locked run: Day 1, 05:00, Dry Wash, no work hours, mild hypothermia. */
+/** Antonio's once soft-locked run: Day 1, 05:00, Dry Wash, mild hypothermia. (Work hours no longer exist.) */
 function softLock(): RunState {
   return run({
     day: 1,
     hour: 5,
     location: "dry-wash",
     visited: ["dry-wash"],
-    laborHours: 0,
-    laborMax: 12,
     bodyTempC: 34.2,
     health: 28,
     hydration: 86,
@@ -47,10 +44,10 @@ function enabled(state: RunState, id: string) {
 }
 
 describe("waiting is always a choice", () => {
-  it("offers an enabled Wait with zero work hours, in every zone, at every hour", () => {
+  it("offers an enabled Wait in every zone, at every hour, in any condition", () => {
     for (const location of ["camp", ...gameData.zones.map((zone) => zone.id)]) {
       for (let hour = 0; hour < 24; hour += 1) {
-        const state = run({ location, hour, laborHours: 0, health: 3, bodyTempC: 34, hydration: 0 });
+        const state = run({ location, hour, fatigue: 99, health: 3, bodyTempC: 34, hydration: 0 });
         const wait = enabled(state, "wait-1");
         expect(wait?.command, `${location} ${hour}:00`).toEqual({ type: "wait", hours: 1 });
         expect(hasValidAction(state, emptyJournal(), gameData)).toBe(true);
@@ -60,44 +57,37 @@ describe("waiting is always a choice", () => {
     }
   });
 
-  it("advances the day and restores work hours when a wait crosses dawn", () => {
-    const state = run({ day: 3, hour: 4, location: "rocky-ridge", laborHours: 0, laborMax: 12, bodyTempC: 37 });
+  it("advances the day and runs dawn when a wait crosses 06:00", () => {
+    const state = run({ day: 3, hour: 4, location: "rocky-ridge", bodyTempC: 37 });
     const after = step(state, { type: "wait", hours: 3 }).state;
     expect(after.phase).toBe("playing");
     expect(after.day).toBe(4);
     expect(after.hour).toBe(7);
-    const budget = computeBudget(after, gameData).hours;
-    expect(budget).toBeGreaterThan(0);
-    expect(after.laborMax).toBe(budget);
-    expect(after.laborHours).toBe(budget);
     expect(after.log.some((line) => line.text.startsWith("Day 4."))).toBe(true);
 
-    const untilDawn = step(run({ day: 3, hour: 22, location: "dry-wash", laborHours: 0 }), { type: "wait" }).state;
+    const untilDawn = step(run({ day: 3, hour: 22, location: "dry-wash" }), { type: "wait" }).state;
     expect(untilDawn.hour).toBe(6);
     expect(untilDawn.day).toBe(4);
-    expect(untilDawn.laborHours).toBeGreaterThan(0);
   });
 
   it("unlocks the exact soft-lock state from the field report", () => {
     const state = softLock();
     expect(hasValidAction(state, emptyJournal(), gameData)).toBe(true);
     expect(enabled(state, "wait-1")).toBeTruthy();
-    expect(enabled(state, "rest")?.detail).toContain("1h");
+    expect(enabled(state, "search-zone")).toBeTruthy();
+    expect(enabled(state, "return")).toBeTruthy();
     expect(enabled(state, "sleep")?.label).toBe("Sleep in the open");
 
     const waited = step(state, { type: "wait", hours: 1 }).state;
     expect(waited.phase).toBe("playing");
     expect(waited.day).toBe(2);
     expect(waited.hour).toBe(6);
-    expect(waited.laborHours).toBe(computeBudget(waited, gameData).hours);
-    expect(waited.laborHours).toBeGreaterThanOrEqual(gameData.needs.actionBudget.minimum);
     expect(waited.health).toBeLessThan(28);
     expect(hasValidAction(waited, emptyJournal(), gameData)).toBe(true);
 
     const rested = step(state, { type: "rest" }).state;
     expect(rested.day).toBe(2);
-    expect(rested.hour).toBe(6);
-    expect(rested.laborHours).toBeGreaterThan(0);
+    expect(rested.hour).toBe(7);
   });
 
   it("makes the open dangerous: midday heat and exposed nights both cost more than cover", () => {

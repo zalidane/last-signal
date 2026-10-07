@@ -2,6 +2,15 @@ import type { GameData, Journal, RunState, Threat } from "../models/types.ts";
 import { addLesson, runNumber } from "./journal.ts";
 import { effectiveRescueDay } from "./rescue.ts";
 import { computeScore } from "./score.ts";
+import { wildlifeJournalEntries } from "./wildlife.ts";
+
+function discoveryName(id: string, data: GameData): string {
+  return (
+    data.discoveryById.get(id)?.name ??
+    wildlifeJournalEntries(data).find((entry) => entry.id === id)?.name ??
+    id
+  );
+}
 
 function hazardName(id: string, data: GameData): string {
   return (
@@ -65,9 +74,7 @@ export function conclude(
           data.rescue,
         ),
         signalDays: state.rescue.signalDays,
-        discoveries: state.runDiscoveries.map(
-          (id) => data.discoveryById.get(id)?.name ?? id,
-        ),
+        discoveries: state.runDiscoveries.map((id) => discoveryName(id, data)),
         schematics: state.runSchematics.map(
           (id) => data.schematicById.get(id)?.name ?? id,
         ),

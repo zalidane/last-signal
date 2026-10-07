@@ -12,7 +12,10 @@
     {
       "id": "laceration",
       "weight": 3,
-      "condition": { "id": "laceration", "hours": 18 },
+      "condition": {
+        "id": "laceration",
+        "hours": 18
+      },
       "health": -4,
       "morale": -4,
       "log": "A flap of skin on your forearm is still leaking. It is not deep. It is also not going to ignore you."
@@ -20,25 +23,80 @@
     {
       "id": "concussion",
       "weight": 2,
-      "condition": { "id": "concussion", "hours": 16 },
+      "condition": {
+        "id": "concussion",
+        "hours": 16
+      },
       "fatigue": 14,
       "morale": -8,
-      "log": "Your head rings when you turn it. The day will be shorter until that stops."
+      "log": "Your head rings when you turn it. Everything will take longer until that stops."
     }
   ],
-  "hydration": [74, 90],
-  "hunger": [70, 88],
-  "morale": [54, 72],
-  "fatigue": [16, 32],
-  "waterLiters": [1.6, 3.2],
+  "hydration": [
+    74,
+    90
+  ],
+  "hunger": [
+    70,
+    88
+  ],
+  "morale": [
+    54,
+    72
+  ],
+  "fatigue": [
+    16,
+    32
+  ],
+  "waterLiters": [
+    1.6,
+    3.2
+  ],
   "stacks": [
-    { "id": "ration", "min": 1, "max": 2 },
-    { "id": "cloth", "min": 0, "max": 2 },
-    { "id": "debris", "min": 1, "max": 3 },
-    { "id": "stone", "min": 0, "max": 2 },
-    { "id": "fuel", "min": 0, "max": 1 },
-    { "id": "plastic-sheet", "chance": 0.28, "qty": 1 },
-    { "id": "container", "chance": 0.34, "qty": 1 },
-    { "id": "tubing", "chance": 0.18, "qty": 1 }
+    {
+      "id": "ration",
+      "min": 1,
+      "max": 2
+    },
+    {
+      "id": "cloth",
+      "min": 0,
+      "max": 2
+    },
+    {
+      "id": "debris",
+      "min": 1,
+      "max": 3
+    },
+    {
+      "id": "stone",
+      "min": 0,
+      "max": 2
+    },
+    {
+      "id": "fuel",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "id": "plastic-sheet",
+      "chance": 0.28,
+      "qty": 1
+    },
+    {
+      "id": "container",
+      "chance": 0.34,
+      "qty": 1
+    },
+    {
+      "id": "tubing",
+      "chance": 0.18,
+      "qty": 1
+    },
+    {
+      "id": "knife",
+      "chance": 0.15,
+      "qty": 1
+    }
   ]
 }

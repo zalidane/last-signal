@@ -24,10 +24,12 @@ import {
   runNumber,
 } from "./journal.ts";
 import { pushLog } from "./log.ts";
-import { advanceTime, contextFor, reconcileLabor } from "./needs.ts";
+import { advanceTime, contextFor } from "./needs.ts";
+import { planAction, planLabel, type ActionPlan } from "./pace.ts";
 import type { Rng } from "./rng.ts";
 import { hoursUntilDawn } from "./time.ts";
-import { weightedIndex } from "./util.ts";
+import { clamp, round2, weightedIndex } from "./util.ts";
+import { bestWeapon, eatRawMeat, killOdds, resolveSighting, rollSighting } from "./wildlife.ts";
 
 export interface StepResult {
   state: RunState;
@@ -36,16 +38,6 @@ export interface StepResult {
 
 function fail(state: RunState, journal: Journal, text: string): StepResult {
   return { state: pushLog(state, text), journal };
-}
-
-function timeBlock(state: RunState, hours: number, usesLabor: boolean): string | null {
-  if (usesLabor && state.laborHours < hours) {
-    return `Need ${hours} work hours, have ${state.laborHours}.`;
-  }
-  if (hours > hoursUntilDawn(state.hour)) {
-    return "That runs past dawn. Sleep, or start earlier.";
-  }
-  return null;
 }
 
 function runHours(
@@ -87,6 +79,29 @@ function travelCost(state: RunState, hours: number): number {
   return hours + (state.sprainHours > 0 ? 1 : 0);
 }
 
+function blockedText(plan: ActionPlan, data: GameData): string {
+  return `${plan.blocked} ${data.needs.darkness.lightHint}`;
+}
+
+/** Light the torch if this plan relies on one. It is spent by the action. */
+function lightTorch(state: RunState, plan: ActionPlan): RunState {
+  if (!plan.torch) return state;
+  return pushLog(
+    { ...state, inventory: addItem(state.inventory, "torch", -1) },
+    "You light a torch. It will last the job and no longer.",
+  );
+}
+
+function slowNote(plan: ActionPlan): RunState["log"][number]["text"] | null {
+  if (plan.hours <= plan.base) return null;
+  return `It takes ${plan.hours} hours instead of ${plan.base}.`;
+}
+
+function withSlowNote(state: RunState, plan: ActionPlan): RunState {
+  const note = slowNote(plan);
+  return note ? pushLog(state, note) : state;
+}
+
 export function applyCommand(
   state: RunState,
   journal: Journal,
@@ -95,6 +110,67 @@ export function applyCommand(
   rng: Rng,
 ): StepResult {
   if (state.phase === "ended") return { state, journal };
+  if (state.pending) {
+    if (command.type !== "sighting") {
+      const animal = data.animalById.get(state.pending.animalId);
+      return fail(state, journal, `The ${animal?.name.toLowerCase() ?? "animal"} is right there. Decide first.`);
+    }
+    return afterStep(resolveSighting(state, journal, command.choice, data, rng), data, rng);
+  }
+  if (command.type === "sighting") return { state, journal };
+  return afterStep(dispatch(state, journal, command, data, rng), data, rng);
+}
+
+/** Runs after every command: an unanswered choice waits; fatigue at the limit drops you. */
+function afterStep(step: StepResult, data: GameData, rng: Rng): StepResult {
+  const ended = finishIfEnded(step.state, step.journal, data);
+  if (ended.state.phase !== "playing" || ended.state.pending) return ended;
+  if (ended.state.fatigue >= data.needs.fatigue.collapseAt) return collapse(ended.state, ended.journal, data, rng);
+  return ended;
+}
+
+/**
+ * Fatigue hit the limit. A hard stop: forced sleep where you stand until the next 06:00,
+ * with full exposure away from camp, poor recovery, and things that bite.
+ */
+export function collapse(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
+  const spec = data.needs.collapse;
+  const camp = atCamp(state);
+  const hours = hoursUntilDawn(state.hour);
+  let step = runHours(
+    pushLog(state, camp ? spec.logCamp : spec.logOpen),
+    journal,
+    hours,
+    { activity: "sleep", atCamp: camp, exposure: 1, collapsed: true },
+    data,
+    rng,
+    (night, nightJournal) => {
+      let woke: StepResult = { state: night, journal: nightJournal };
+      if (!camp) {
+        for (const risk of spec.hazards) {
+          if (woke.state.phase === "ended") break;
+          if (rng.next() >= risk.chance) continue;
+          const hazard = data.hazardById.get(risk.id);
+          if (hazard) woke = applyHazard(woke.state, woke.journal, hazard, data);
+        }
+      }
+      if (woke.state.phase === "ended") return woke;
+      return { ...woke, state: pushLog(woke.state, spec.logWake) };
+    },
+  );
+  if (step.state.phase === "ended" && !step.state.ending) {
+    step = { ...step, state: { ...step.state, pendingCause: "exhaustion" } };
+  }
+  return finishIfEnded(step.state, step.journal, data);
+}
+
+function dispatch(
+  state: RunState,
+  journal: Journal,
+  command: Command,
+  data: GameData,
+  rng: Rng,
+): StepResult {
   switch (command.type) {
     case "rest":
       return rest(state, journal, data, rng);
@@ -119,13 +195,8 @@ export function applyCommand(
   }
 }
 
-/** Rest never runs past dawn: it is clamped to the hours left in the night. */
-export function restHoursFor(state: RunState, data: GameData): number {
-  return Math.max(1, Math.min(data.needs.restHours, hoursUntilDawn(state.hour)));
-}
-
 function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
-  const hours = restHoursFor(state, data);
+  const hours = data.needs.restHours;
   const camp = atCamp(state);
   let step = runHours(
     pushLog(state, camp ? "You get out of the sun and wait." : "You take the shade the rocks will give you."),
@@ -135,7 +206,7 @@ function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): Step
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   const sheltered = camp && step.state.camp.shelter;
   step = {
     ...step,
@@ -146,7 +217,7 @@ function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): Step
         : "Shade is not safety, but it is cheaper than walking.",
     ),
   };
-  return step;
+  return { ...step, state: rollSighting(step.state, data, rng, "rest") };
 }
 
 function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
@@ -156,7 +227,7 @@ function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): Ste
     !state.camp.shelter && !state.camp.firePit
       ? " The wreck will only blunt the night, not stop it."
       : "";
-  const step = runHours(
+  return runHours(
     pushLog(state, `You sleep.${cold}`),
     journal,
     hours,
@@ -164,14 +235,13 @@ function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): Ste
     data,
     rng,
   );
-  return finishIfEnded(step.state, step.journal, data);
 }
 
 /** Sleeping away from camp: allowed, but worse recovery and something may find you. */
 function sleepOpen(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
   const spec = data.needs.wait;
   const hours = hoursUntilDawn(state.hour);
-  const step = runHours(
+  return runHours(
     pushLog(state, spec.logs.sleepOpen),
     journal,
     hours,
@@ -188,7 +258,6 @@ function sleepOpen(state: RunState, journal: Journal, data: GameData, rng: Rng):
       return { ...woke, state: pushLog(woke.state, spec.logs.sleepOpenDone) };
     },
   );
-  return finishIfEnded(step.state, step.journal, data);
 }
 
 /** Resolve a wait request to whole hours. Omitted means "until the next dawn". */
@@ -199,7 +268,7 @@ export function waitHoursFor(state: RunState, requested: number | undefined): nu
 }
 
 /**
- * Waiting is always legal: any zone, any hour, any condition, no work hours.
+ * Waiting is always legal: any zone, any hour, any condition.
  * It applies normal exposure. Camp gives the wreck, shelter, and fire; the open gives nothing.
  */
 function wait(
@@ -215,8 +284,8 @@ function wait(
   const logs = data.needs.wait.logs;
   const opener = !camp ? logs.waitOpen : state.camp.shelter ? logs.waitShelter : logs.waitCamp;
   const step = runHours(pushLog(state, opener), journal, hours, contextFor("wait", camp), data, rng);
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
-  return { ...step, state: pushLog(step.state, logs.waitDone) };
+  if (step.state.phase === "ended") return step;
+  return { ...step, state: rollSighting(pushLog(step.state, logs.waitDone), data, rng, "rest") };
 }
 
 function travel(
@@ -232,18 +301,16 @@ function travel(
   }
   const zone = data.zoneById.get(zoneId);
   if (!zone) return { state, journal };
-  const hours = travelCost(state, zone.travelHours);
-  const block = timeBlock(state, hours, true);
-  if (block) return fail(state, journal, `${zone.name}: ${block}`);
+  const plan = planAction(state, travelCost(state, zone.travelHours), data, { useTorch: true });
   let step = runHours(
-    pushLog({ ...state, laborHours: state.laborHours - hours }, `You leave camp for the ${zone.name}.`),
+    withSlowNote(lightTorch(pushLog(state, `You leave camp for the ${zone.name}.`), plan), plan),
     journal,
-    hours,
+    plan.hours,
     contextFor("travel", false, zone.exposure),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   const first = !step.state.visited.includes(zone.id);
   step = {
     ...step,
@@ -257,33 +324,38 @@ function travel(
     ...step,
     state: pushLog(step.state, first ? zone.arriveLog : `You are back at the ${zone.name}.`),
   };
-  step = rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id);
-  return finishIfEnded(step.state, step.journal, data);
+  step = rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id, plan);
+  if (step.state.phase === "ended") return step;
+  return { ...step, state: rollSighting(step.state, data, rng, "travel") };
 }
 
 function travelBack(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
   if (atCamp(state)) return fail(state, journal, "You are already at the wreck.");
   const zone = data.zoneById.get(state.location);
   if (!zone) return { state, journal };
-  const hours = travelCost(state, zone.travelHours);
-  const block = timeBlock(state, hours, true);
-  if (block) return fail(state, journal, `The walk back: ${block}`);
+  const plan = planAction(state, travelCost(state, zone.travelHours), data, { useTorch: true });
   let step = runHours(
-    pushLog(
-      { ...state, laborHours: state.laborHours - hours },
-      `You turn back toward the wreck. ${hours} hours, if the ankle and the sun agree.`,
+    withSlowNote(
+      lightTorch(pushLog(state, `You turn back toward the wreck. ${plan.hours} hours, if the ankle and the sun agree.`), plan),
+      plan,
     ),
     journal,
-    hours,
+    plan.hours,
     contextFor("travel", false, zone.exposure),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   step = { ...step, state: { ...step.state, location: "camp" } };
   step = { ...step, state: pushLog(step.state, "The fuselage comes up out of the glare. Camp, such as it is.") };
-  step = rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id);
-  return finishIfEnded(step.state, step.journal, data);
+  return rollHazards(step.state, step.journal, data, rng, "travel", false, zone.id, plan);
+}
+
+function searchPlan(state: RunState, data: GameData): ActionPlan {
+  const camp = atCamp(state);
+  const zone = camp ? null : data.zoneById.get(state.location);
+  const hours = camp ? data.camp.searchHours : (zone?.searchHours ?? 2);
+  return planAction(state, hours, data, { needsLight: Boolean(zone?.searchNeedsLight), useTorch: true });
 }
 
 function search(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
@@ -292,22 +364,24 @@ function search(state: RunState, journal: Journal, data: GameData, rng: Rng): St
     return fail(state, journal, "The cabin has given up its easy secrets. The rest is out in the zones.");
   }
   const zone = camp ? null : data.zoneById.get(state.location);
-  const hours = camp ? data.camp.searchHours : (zone?.searchHours ?? 2);
-  const block = timeBlock(state, hours, true);
-  if (block) return fail(state, journal, block);
+  const plan = searchPlan(state, data);
+  if (plan.blocked) return fail(state, journal, blockedText(plan, data));
   const exposure = zone?.exposure ?? 1;
   let step = runHours(
-    pushLog(
-      { ...state, laborHours: state.laborHours - hours },
-      camp ? "You pick through the cabin, hands slow in the heat." : `You search the ${zone?.name ?? "ground"}.`,
+    withSlowNote(
+      lightTorch(
+        pushLog(state, camp ? "You pick through the cabin, hands slow in the heat." : `You search the ${zone?.name ?? "ground"}.`),
+        plan,
+      ),
+      plan,
     ),
     journal,
-    hours,
+    plan.hours,
     contextFor("search", camp, exposure),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   if (camp) {
     step = {
       ...step,
@@ -333,8 +407,16 @@ function search(state: RunState, journal: Journal, data: GameData, rng: Rng): St
       };
     }
   }
-  step = rollHazards(step.state, step.journal, data, rng, "search", camp, camp ? "camp" : (zone?.id ?? "camp"));
-  return finishIfEnded(step.state, step.journal, data);
+  step = rollHazards(step.state, step.journal, data, rng, "search", camp, camp ? "camp" : (zone?.id ?? "camp"), plan);
+  if (step.state.phase === "ended") return step;
+  return { ...step, state: rollSighting(step.state, data, rng, "search") };
+}
+
+function recipeHidden(state: RunState, recipe: RecipeDef): boolean {
+  if (recipe.grants !== "item") return false;
+  const max = recipe.maxCarry;
+  if (!max) return false;
+  return Object.keys(recipe.yields ?? {}).every((id) => (state.inventory[id] ?? 0) >= max);
 }
 
 function build(
@@ -352,6 +434,7 @@ function build(
   if (recipe.grants === "shelter" && state.camp.shelter) return fail(state, journal, recipe.already ?? "Already built.");
   if (recipe.grants === "firePit" && state.camp.firePit) return fail(state, journal, recipe.already ?? "Already built.");
   if (recipe.grants === "signalFire" && state.camp.signalLit) return fail(state, journal, recipe.already ?? "Already burning.");
+  if (recipeHidden(state, recipe)) return fail(state, journal, `You already carry enough of those.`);
   if (recipe.max && state.camp.stills.length >= recipe.max) {
     return fail(state, journal, `You have ${recipe.max} stills. That is as many as you can tend.`);
   }
@@ -364,25 +447,27 @@ function build(
   if (!hasAll(state.inventory, recipe.requires)) {
     return fail(state, journal, `Missing ${missingNames(state.inventory, recipe.requires, data).join(", ")}.`);
   }
-  const block = timeBlock(state, recipe.hours, true);
-  if (block) return fail(state, journal, block);
+  const plan = planAction(state, recipe.hours, data, { needsLight: recipe.needsLight });
+  if (plan.blocked) return fail(state, journal, blockedText(plan, data));
   let step = runHours(
-    pushLog(
-      {
-        ...state,
-        laborHours: state.laborHours - recipe.hours,
-        inventory: spend(state.inventory, recipe.requires),
-      },
-      `You start on the ${recipe.name.toLowerCase()}.`,
+    withSlowNote(
+      lightTorch(
+        pushLog(
+          { ...state, inventory: spend(state.inventory, recipe.requires) },
+          `You start on the ${recipe.name.toLowerCase()}.`,
+        ),
+        plan,
+      ),
+      plan,
     ),
     journal,
-    recipe.hours,
+    plan.hours,
     contextFor("build", atCamp(state)),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
-  step = { ...step, state: grantRecipe(step.state, recipe) };
+  if (step.state.phase === "ended") return step;
+  step = { ...step, state: grantRecipe(step.state, recipe, state.location) };
   const builtLog = recipe.grants === "solarStill" && state.location === "dry-wash" && recipe.washLog
     ? recipe.washLog
     : recipe.log;
@@ -408,15 +493,15 @@ function build(
       }
     }
   }
-  const reconciled = reconcileLabor(step.state, data);
-  step = {
-    ...step,
-    state: reconciled.note ? pushLog(reconciled.state, reconciled.note) : reconciled.state,
-  };
   return step;
 }
 
-function grantRecipe(state: RunState, recipe: RecipeDef): RunState {
+function grantRecipe(state: RunState, recipe: RecipeDef, builtAt: string): RunState {
+  if (recipe.grants === "item") {
+    let inventory = state.inventory;
+    for (const [id, qty] of Object.entries(recipe.yields ?? {})) inventory = addItem(inventory, id, qty);
+    return { ...state, inventory };
+  }
   const moraleBump = recipe.grants === "shelter" ? 8 : recipe.grants === "signalFire" ? 6 : 4;
   const camp = { ...state.camp, stills: [...state.camp.stills] };
   if (recipe.grants === "shelter") camp.shelter = true;
@@ -426,7 +511,7 @@ function grantRecipe(state: RunState, recipe: RecipeDef): RunState {
     camp.signalLit = true;
   }
   if (recipe.grants === "solarStill") {
-    camp.stills.push({ id: state.nextStillId, wash: state.location === "dry-wash" });
+    camp.stills.push({ id: state.nextStillId, wash: builtAt === "dry-wash" });
     return {
       ...state,
       camp,
@@ -450,30 +535,19 @@ function relight(
   if (!hasAll(state.inventory, spec.requires)) {
     return fail(state, journal, `Relighting needs ${missingNames(state.inventory, spec.requires, data).join(", ")}.`);
   }
-  const block = timeBlock(state, spec.hours, true);
-  if (block) return fail(state, journal, block);
+  const plan = planAction(state, spec.hours, data);
   let step = runHours(
-    pushLog(
-      {
-        ...state,
-        laborHours: state.laborHours - spec.hours,
-        inventory: spend(state.inventory, spec.requires),
-      },
-      "You kneel at the dead beacon.",
-    ),
+    pushLog({ ...state, inventory: spend(state.inventory, spec.requires) }, "You kneel at the dead beacon."),
     journal,
-    spec.hours,
+    plan.hours,
     contextFor("camp", true),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   step = {
     ...step,
-    state: pushLog(
-      { ...step.state, camp: { ...step.state.camp, signalLit: true } },
-      spec.log,
-    ),
+    state: pushLog({ ...step.state, camp: { ...step.state.camp, signalLit: true } }, spec.log),
   };
   return step;
 }
@@ -509,6 +583,11 @@ function useItem(
   if (itemId === "ration" && (action === "eat" || action === "warm")) {
     return eatRation(state, journal, data, action === "warm");
   }
+  if (data.wildlife.meat[itemId]) {
+    if (action === "eat") return eatRawMeat(state, journal, itemId, data, rng);
+    if (action === "cook") return cookMeat(state, journal, itemId, data, rng);
+    return { state, journal };
+  }
   if (itemId === "field-manual" && action === "read") return readManual(state, journal, data, rng);
   if (itemId === "first-aid" && action === "use") return useKit(state, journal, data);
   const discovery = data.discoveryByItemId.get(itemId);
@@ -537,20 +616,49 @@ function drink(state: RunState, journal: Journal, data: GameData): StepResult {
 
 function eatRation(state: RunState, journal: Journal, data: GameData, warm: boolean): StepResult {
   const bonus = warm && state.camp.firePit && atCamp(state);
-  const hunger = data.needs.ration.hunger + (bonus ? data.needs.ration.warmedHunger : 0);
-  const morale = data.needs.ration.morale + (bonus ? data.needs.ration.warmedMorale : 0);
+  const r = data.needs.ration;
+  const hunger = r.hunger + (bonus ? r.warmedHunger : 0);
+  const morale = r.morale + (bonus ? r.warmedMorale : 0);
   const next = pushLog(
     {
       ...state,
       inventory: addItem(state.inventory, "ration", -1),
       hunger: Math.min(100, state.hunger + hunger),
       morale: Math.min(100, state.morale + morale),
+      health: bonus ? Math.min(100, round2(state.health + r.warmedHealth)) : state.health,
     },
     bonus
       ? "You warm the ration over the pit. It is still trail food. It is also a small kindness."
       : "You eat a ration. Salt, calories, and no surprises.",
   );
   return { state: next, journal };
+}
+
+export function canCook(state: RunState): boolean {
+  return atCamp(state) && state.camp.firePit;
+}
+
+function cookMeat(state: RunState, journal: Journal, itemId: string, data: GameData, rng: Rng): StepResult {
+  const meat = data.wildlife.meat[itemId];
+  if (!meat) return { state, journal };
+  if (!canCook(state)) return fail(state, journal, "Cooking needs the lit fire pit at camp.");
+  const plan = planAction(state, meat.cook.hours, data);
+  const step = runHours(
+    withSlowNote(pushLog({ ...state, inventory: addItem(state.inventory, itemId, -1) }, "You set the meat over the fire pit."), plan),
+    journal,
+    plan.hours,
+    contextFor("camp", true),
+    data,
+    rng,
+  );
+  if (step.state.phase === "ended") return step;
+  const cooked: RunState = {
+    ...step.state,
+    hunger: clamp(round2(step.state.hunger + meat.cook.hunger), 0, 100),
+    health: clamp(round2(step.state.health + meat.cook.health), 0, 100),
+    morale: clamp(round2(step.state.morale + meat.cook.morale), 0, 100),
+  };
+  return { ...step, state: pushLog(cooked, meat.cook.log) };
 }
 
 function readManual(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
@@ -566,31 +674,28 @@ function readManual(state: RunState, journal: Journal, data: GameData, rng: Rng)
       ),
     };
   }
-  const block = timeBlock(state, 1, true);
-  if (block) return fail(state, journal, `The page can wait. ${block}`);
+  const plan = planAction(state, 1, data, { needsLight: true });
+  if (plan.blocked) return fail(state, journal, `The page can wait. ${blockedText(plan, data)}`);
   const learned = learnSchematic(journal, {
     id: spec.id,
     name: spec.name,
     text: spec.text,
     learnedOnRun: runNumber(journal),
   });
-  let next = noteRunSchematic(
-    { ...state, inventory: addItem(state.inventory, "field-manual", -1), laborHours: state.laborHours - 1 },
+  const next = noteRunSchematic(
+    lightTorch({ ...state, inventory: addItem(state.inventory, "field-manual", -1) }, plan),
     spec.id,
   );
   const step = runHours(
     pushLog(next, `You read the charred page. ${spec.text}`),
     learned.journal,
-    1,
+    plan.hours,
     contextFor("camp", atCamp(next)),
     data,
     rng,
   );
-  return finishIfEnded(
-    pushLog(step.state, "You know the still now. Plastic, a container, tubing, a pit."),
-    step.journal,
-    data,
-  );
+  if (step.state.phase === "ended") return step;
+  return { ...step, state: pushLog(step.state, "You know the still now. Plastic, a container, tubing, a pit.") };
 }
 
 function useKit(state: RunState, journal: Journal, data: GameData): StepResult {
@@ -612,8 +717,7 @@ function useKit(state: RunState, journal: Journal, data: GameData): StepResult {
       ? `You spend the kit on ${names.join(" and ")}. The clock on that wound stops.`
       : "You wrap the ankle. It is not healed. It is less of a tax.",
   );
-  const reconciled = reconcileLabor(next, data);
-  return { journal, state: reconciled.state };
+  return { journal, state: next };
 }
 
 function remember(
@@ -635,17 +739,11 @@ function remember(
   };
 }
 
-function eatDiscovery(state: RunState, journal: Journal, discovery: DiscoveryDef, data: GameData): StepResult {
+function eatDiscovery(state: RunState, journal: Journal, discovery: DiscoveryDef, _data: GameData): StepResult {
   let next = { ...state, inventory: addItem(state.inventory, discovery.itemId, -1) };
   next = applyEffect(next, discovery.eat);
-  let step = remember(next, journal, discovery, discovery.eat);
-  step = countPear(step.state, step.journal, discovery);
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
-  const reconciled = reconcileLabor(step.state, data);
-  return {
-    journal: step.journal,
-    state: reconciled.note ? pushLog(reconciled.state, reconciled.note) : reconciled.state,
-  };
+  const step = remember(next, journal, discovery, discovery.eat);
+  return countPear(step.state, step.journal, discovery);
 }
 
 function countPear(state: RunState, journal: Journal, discovery: DiscoveryDef): StepResult {
@@ -664,27 +762,14 @@ function experiment(
   data: GameData,
   rng: Rng,
 ): StepResult {
-  const hours = discovery.experiment.hours ?? 1;
-  const block = timeBlock(state, hours, true);
-  if (block) return fail(state, journal, block);
-  let next = {
-    ...state,
-    laborHours: state.laborHours - hours,
-    inventory: addItem(state.inventory, discovery.itemId, -1),
-  };
-  let step = runHours(next, journal, hours, contextFor(atCamp(next) ? "camp" : "rest", atCamp(next)), data, rng);
+  const plan = planAction(state, discovery.experiment.hours ?? 1, data);
+  const next = { ...state, inventory: addItem(state.inventory, discovery.itemId, -1) };
+  let step = runHours(withSlowNote(next, plan), journal, plan.hours, contextFor(atCamp(next) ? "camp" : "rest", atCamp(next)), data, rng);
   if (step.state.phase === "ended") {
-    step = remember(step.state, step.journal, discovery, discovery.experiment);
-    return finishIfEnded(step.state, step.journal, data);
+    return remember(step.state, step.journal, discovery, discovery.experiment);
   }
   step = { ...step, state: applyEffect(step.state, discovery.experiment) };
-  step = remember(step.state, step.journal, discovery, discovery.experiment);
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
-  const reconciled = reconcileLabor(step.state, data);
-  return {
-    journal: step.journal,
-    state: reconciled.note ? pushLog(reconciled.state, reconciled.note) : reconciled.state,
-  };
+  return remember(step.state, step.journal, discovery, discovery.experiment);
 }
 
 function prepare(
@@ -696,31 +781,29 @@ function prepare(
 ): StepResult {
   const prep = discovery.prepare;
   if (!prep) return { state, journal };
-  const hours = prep.hours ?? 1;
-  const block = timeBlock(state, hours, true);
-  if (block) return fail(state, journal, block);
-  const fired = Boolean(prep.fireBonus) && state.camp.firePit && atCamp(state);
+  const plan = planAction(state, prep.hours ?? 1, data);
+  const fired = Boolean(prep.fireBonus) && canCook(state);
   let step = runHours(
-    pushLog(
-      {
-        ...state,
-        laborHours: state.laborHours - hours,
-        inventory: addItem(state.inventory, discovery.itemId, -1),
-      },
-      fired ? "You work it over the fire." : "You prepare it without a fire.",
+    withSlowNote(
+      pushLog(
+        { ...state, inventory: addItem(state.inventory, discovery.itemId, -1) },
+        fired ? "You work it over the fire." : "You prepare it without a fire.",
+      ),
+      plan,
     ),
     journal,
-    hours,
+    plan.hours,
     contextFor("camp", atCamp(state)),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   step = { ...step, state: applyEffect(step.state, prep) };
   if (fired && prep.fireBonus) {
     step = {
       ...step,
       state: applyEffect(step.state, {
+        health: prep.fireBonus.health,
         hunger: prep.fireBonus.hunger,
         hydration: prep.fireBonus.hydration,
         morale: prep.fireBonus.morale,
@@ -728,8 +811,7 @@ function prepare(
       }),
     };
   }
-  step = countPear(step.state, step.journal, discovery);
-  return finishIfEnded(step.state, step.journal, data);
+  return countPear(step.state, step.journal, discovery);
 }
 
 function boil(
@@ -741,38 +823,30 @@ function boil(
 ): StepResult {
   const spec = discovery.boil;
   if (!spec) return { state, journal };
-  if (!state.camp.firePit || !atCamp(state)) {
+  if (!canCook(state)) {
     return fail(state, journal, "Boiling needs the fire pit, and the fire pit is at camp.");
   }
-  const block = timeBlock(state, spec.hours, true);
-  if (block) return fail(state, journal, block);
+  const plan = planAction(state, spec.hours, data);
   let step = runHours(
-    pushLog(
-      {
-        ...state,
-        laborHours: state.laborHours - spec.hours,
-        inventory: addItem(state.inventory, discovery.itemId, -1),
-      },
-      "You set the seep on the fire.",
+    withSlowNote(
+      pushLog({ ...state, inventory: addItem(state.inventory, discovery.itemId, -1) }, "You set the seep on the fire."),
+      plan,
     ),
     journal,
-    spec.hours,
+    plan.hours,
     contextFor("camp", true),
     data,
     rng,
   );
-  if (step.state.phase === "ended") return finishIfEnded(step.state, step.journal, data);
+  if (step.state.phase === "ended") return step;
   step = {
     ...step,
-    state: pushLog(
-      { ...step.state, inventory: addItem(step.state.inventory, "water", spec.yieldsWater) },
-      spec.log,
-    ),
+    state: pushLog({ ...step.state, inventory: addItem(step.state.inventory, "water", spec.yieldsWater) }, spec.log),
   };
   return step;
 }
 
-function poultice(state: RunState, journal: Journal, discovery: DiscoveryDef, data: GameData): StepResult {
+function poultice(state: RunState, journal: Journal, discovery: DiscoveryDef, _data: GameData): StepResult {
   const spec = discovery.poultice;
   if (!spec) return { state, journal };
   if (!state.conditions.some((condition) => condition.id === spec.clears)) {
@@ -785,8 +859,7 @@ function poultice(state: RunState, journal: Journal, discovery: DiscoveryDef, da
     morale: Math.min(100, state.morale + (spec.morale ?? 0)),
   };
   next = pushLog(next, spec.log);
-  const reconciled = reconcileLabor(next, data);
-  return { journal, state: reconciled.state };
+  return { journal, state: next };
 }
 
 export function previewLine(
@@ -794,19 +867,28 @@ export function previewLine(
   hours: number,
   ctx: HourContext,
   data: GameData,
+  label?: string,
 ): { detail: string; warning: string } {
   const end = advanceTime(structuredClone(state), hours, ctx, data);
   const liters = Math.max(0, state.hydration - end.hydration) / data.needs.pointsPerLiter;
   let warning = "";
-  if (end.bodyTempC >= data.needs.bodyTemp.heatSevereC) warning = "Heat stroke risk";
+  if (end.fatigue >= data.needs.fatigue.collapseAt && !ctx.collapsed) warning = data.needs.collapse.warning;
+  else if (end.bodyTempC >= data.needs.bodyTemp.heatSevereC) warning = "Heat stroke risk";
   else if (end.bodyTempC >= data.needs.bodyTemp.heatMildC) warning = "You will overheat";
   else if (end.bodyTempC <= data.needs.bodyTemp.coldSevereC) warning = "Hypothermia risk";
   else if (end.bodyTempC <= data.needs.bodyTemp.coldMildC) warning = "The cold will get in";
-  const health = end.health < state.health - 1 ? ` · ${Math.round(state.health - end.health)} health` : "";
+  const delta = end.health - state.health;
+  const health = delta < -1 ? ` · ${Math.round(-delta)} health` : delta >= 0.5 ? ` · +${delta.toFixed(1)} health` : "";
   return {
-    detail: `${hours}h · about ${liters.toFixed(1)} L${health}`,
+    detail: `${label ?? `${hours}h`} · about ${liters.toFixed(1)} L${health}`,
     warning,
   };
+}
+
+function planPreview(state: RunState, plan: ActionPlan, ctx: HourContext, data: GameData): { detail: string; warning: string } {
+  const preview = previewLine(state, plan.hours, ctx, data, planLabel(plan));
+  const torch = plan.torch ? " · burns a torch" : "";
+  return { detail: `${preview.detail}${torch}`, warning: preview.warning };
 }
 
 function button(
@@ -821,8 +903,40 @@ function button(
   return { id, group, label, detail, warning, disabled, command: disabled ? null : command };
 }
 
+function sightingButtons(state: RunState, data: GameData): ActionButton[] {
+  const pending = state.pending;
+  const animal = pending ? data.animalById.get(pending.animalId) : undefined;
+  if (!animal) {
+    return [button("sighting-back", "Now", "Back away", "", "", false, { type: "sighting", choice: "back-away" })];
+  }
+  const weapon = bestWeapon(state, data);
+  const odds = killOdds(state, animal, weapon, data);
+  const miss = Math.round((1 - odds) * weapon.failStrike * 100);
+  return [
+    button(
+      "sighting-back",
+      "Now",
+      "Back away",
+      `Small chance it strikes anyway (${Math.round(animal.backAwayStrike * 100)}%)`,
+      "",
+      false,
+      { type: "sighting", choice: "back-away" },
+    ),
+    button(
+      "sighting-kill",
+      "Now",
+      `Try to kill the ${animal.name.toLowerCase()}`,
+      `${weapon.name} · about ${Math.round(odds * 100)}% to kill · ${miss}% it ${animal.strikeHazard === "snakebite" ? "bites" : "stings"} you`,
+      miss >= 50 ? "Risky with what you are holding" : "",
+      false,
+      { type: "sighting", choice: "kill" },
+    ),
+  ];
+}
+
 export function listActions(state: RunState, journal: Journal, data: GameData): ActionButton[] {
   if (state.phase !== "playing") return [];
+  if (state.pending) return sightingButtons(state, data);
   const actions: ActionButton[] = [];
   const camp = atCamp(state);
 
@@ -840,17 +954,28 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
     );
   }
   if ((state.inventory.ration ?? 0) >= 1 && state.hunger < 90) {
-    const warm = state.camp.firePit && camp;
+    const warm = canCook(state);
     actions.push(
       button(
         "eat-ration",
         "Now",
         warm ? "Eat a warmed ration" : "Eat a ration",
-        `${state.inventory.ration} left`,
+        `${state.inventory.ration} left${warm ? ` · +${data.needs.ration.warmedHealth} health` : ""}`,
         "",
         false,
         { type: "item", itemId: "ration", action: warm ? "warm" : "eat" },
       ),
+    );
+  }
+  for (const [itemId, meat] of Object.entries(data.wildlife.meat)) {
+    if ((state.inventory[itemId] ?? 0) < 1 || !canCook(state)) continue;
+    const plan = planAction(state, meat.cook.hours, data);
+    actions.push(
+      button(`cook-${itemId}`, "Now", `Cook ${data.itemById.get(itemId)?.name.toLowerCase() ?? itemId}`, `${planLabel(plan)} · +${meat.cook.hunger} hunger · +${meat.cook.health} health`, "", false, {
+        type: "item",
+        itemId,
+        action: "cook",
+      }),
     );
   }
   const treatable = state.conditions.some((c) => ["snakebite", "scorpion", "laceration"].includes(c.id));
@@ -862,10 +987,9 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
     }));
   }
 
-  const restHours = restHoursFor(state, data);
+  const restHours = data.needs.restHours;
   const restPreview = previewLine(state, restHours, contextFor("rest", camp), data);
-  const restNote = restHours < data.needs.restHours ? " · until dawn" : "";
-  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", `${restPreview.detail}${restNote}`, restPreview.warning, false, { type: "rest" }));
+  actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", restPreview.detail, restPreview.warning, false, { type: "rest" }));
 
   const dawnHours = hoursUntilDawn(state.hour);
   if (camp) {
@@ -877,7 +1001,8 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
           : state.camp.shelter
             ? "The shelter should blunt the cold"
             : "The fire should cover the cold";
-    actions.push(button("sleep", "Now", "Sleep until dawn", `${dawnHours}h · ${night}`, "", false, { type: "sleep" }));
+    const preview = previewLine(state, dawnHours, contextFor("sleep", true), data);
+    actions.push(button("sleep", "Now", "Sleep until dawn", `${preview.detail} · ${night}`, preview.warning, false, { type: "sleep" }));
   } else {
     const preview = previewLine(state, dawnHours, contextFor("sleep", false), data);
     actions.push(
@@ -896,9 +1021,8 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
   actions.push(...waitButtons(state, data));
 
   if (camp && state.camp.wreckSearchesLeft > 0) {
-    const hours = data.camp.searchHours;
-    const block = timeBlock(state, hours, true);
-    const preview = block ? { detail: block, warning: "" } : previewLine(state, hours, contextFor("search", true), data);
+    const plan = searchPlan(state, data);
+    const preview = planPreview(state, plan, contextFor("search", true), data);
     actions.push(
       button(
         "search-camp",
@@ -906,7 +1030,7 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
         "Search the cabin",
         `${preview.detail} · ${state.camp.wreckSearchesLeft} passes left`,
         preview.warning,
-        Boolean(block),
+        false,
         { type: "search" },
       ),
     );
@@ -914,12 +1038,11 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
     actions.push(button("search-camp", "Now", "Search the cabin", "The cabin is stripped.", "", true, null));
   } else {
     const zone = data.zoneById.get(state.location);
-    const hours = zone?.searchHours ?? 2;
-    const block = timeBlock(state, hours, true);
-    const preview = block
-      ? { detail: block, warning: "" }
-      : previewLine(state, hours, contextFor("search", false, zone?.exposure ?? 1), data);
-    actions.push(button("search-zone", "Now", "Search here", preview.detail, preview.warning, Boolean(block), { type: "search" }));
+    const plan = searchPlan(state, data);
+    const preview = plan.blocked
+      ? { detail: blockedText(plan, data), warning: "" }
+      : planPreview(state, plan, contextFor("search", false, zone?.exposure ?? 1), data);
+    actions.push(button("search-zone", "Now", "Search here", preview.detail, preview.warning, Boolean(plan.blocked), { type: "search" }));
   }
 
   for (const recipe of data.recipes) {
@@ -931,12 +1054,11 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
 
   if (camp) {
     for (const zone of data.zones) {
-      const hours = travelCost(state, zone.travelHours);
+      const plan = planAction(state, travelCost(state, zone.travelHours), data, { useTorch: true });
       const storm = state.sandstorm ? "A sandstorm is up. You are not walking out into it." : null;
-      const block = storm ?? timeBlock(state, hours, true);
-      const preview = block
-        ? { detail: block, warning: "" }
-        : previewLine(state, hours, contextFor("travel", false, zone.exposure), data);
+      const preview = storm
+        ? { detail: storm, warning: "" }
+        : planPreview(state, plan, contextFor("travel", false, zone.exposure), data);
       actions.push(
         button(
           `go-${zone.id}`,
@@ -944,21 +1066,18 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
           `Travel to ${zone.name}`,
           `${preview.detail}${state.sprainHours > 0 ? " · +1h ankle" : ""}`,
           preview.warning,
-          Boolean(block),
+          Boolean(storm),
           { type: "travel", zoneId: zone.id },
         ),
       );
     }
   } else {
     const zone = data.zoneById.get(state.location);
-    const hours = zone ? travelCost(state, zone.travelHours) : 1;
-    const block = timeBlock(state, hours, true);
-    const preview = block || !zone
-      ? { detail: block ?? "", warning: "" }
-      : previewLine(state, hours, contextFor("travel", false, zone.exposure), data);
-    actions.push(
-      button("return", "Move", "Return to camp", preview.detail, preview.warning, Boolean(block), { type: "return" }),
-    );
+    const plan = planAction(state, zone ? travelCost(state, zone.travelHours) : 1, data, { useTorch: true });
+    const preview = zone
+      ? planPreview(state, plan, contextFor("travel", false, zone.exposure), data)
+      : { detail: "", warning: "" };
+    actions.push(button("return", "Move", "Return to camp", preview.detail, preview.warning, false, { type: "return" }));
   }
 
   return actions;
@@ -1004,9 +1123,10 @@ function recipeButtons(
       ? "The beacon is at camp."
       : !hasAll(state.inventory, recipe.relight.requires)
         ? `Need ${missingNames(state.inventory, recipe.relight.requires, data).join(", ")}`
-        : timeBlock(state, recipe.relight.hours, true);
+        : null;
+    const plan = planAction(state, recipe.relight.hours, data);
     return [
-      button("relight", "Build", "Relight the signal", block || `${recipe.relight.hours}h · 1 fuel`, "", Boolean(block), {
+      button("relight", "Build", "Relight the signal", block || `${planLabel(plan)} · 1 fuel`, "", Boolean(block), {
         type: "build",
         recipeId: recipe.id,
       }),
@@ -1015,6 +1135,8 @@ function recipeButtons(
   if (recipe.grants === "shelter" && state.camp.shelter) return [];
   if (recipe.grants === "firePit" && state.camp.firePit) return [];
   if (recipe.grants === "signalFire" && state.camp.signalLit) return [];
+  if (recipeHidden(state, recipe)) return [];
+  if (recipe.grants === "item" && !hasAll(state.inventory, recipe.requires)) return [];
   if (recipe.grants === "solarStill") {
     const known = Boolean(journal.schematics["solar-still"]);
     const parts = hasAll(state.inventory, recipe.requires);
@@ -1030,13 +1152,14 @@ function stillButton(state: RunState, recipe: RecipeDef, data: GameData, known: 
     ? `${recipe.knownLabel ?? recipe.name}${count ? ` (${count}/${recipe.max ?? 4})` : ""}`
     : (recipe.unknownLabel ?? "Rig a water still");
   const place = state.location === "dry-wash" ? "Wash placement yields more." : "A wash placement yields more.";
+  const plan = planAction(state, recipe.hours, data, { needsLight: recipe.needsLight });
   let block: string | null = null;
   if (recipe.max && count >= recipe.max) block = "You are tending as many stills as you can.";
   else if (!recipe.where.includes(state.location)) block = "Build this at camp, or in the dry wash for a better yield.";
   else if (!hasAll(state.inventory, recipe.requires)) {
     block = `Need ${missingNames(state.inventory, recipe.requires, data).join(", ")}`;
-  } else block = timeBlock(state, recipe.hours, true);
-  const detail = block || `${known ? recipe.hours + "h · " + place : recipe.unknownDetail ?? ""}`;
+  } else if (plan.blocked) block = blockedText(plan, data);
+  const detail = block || `${known ? `${planLabel(plan)} · ${place}` : recipe.unknownDetail ?? ""}${plan.torch && !block ? " · burns a torch" : ""}`;
   return button(known ? "build-still" : "discover-still", "Build", label, detail, "", Boolean(block), {
     type: "build",
     recipeId: recipe.id,
@@ -1049,17 +1172,24 @@ function standardRecipeButton(
   data: GameData,
   label: string,
 ): ActionButton {
+  const plan = planAction(state, recipe.hours, data, { needsLight: recipe.needsLight });
   let block: string | null = null;
   if (!recipe.where.includes(state.location)) block = `Build this at ${recipe.where.join(" or ")}.`;
   else if (recipe.requiresFlag === "firePit" && !state.camp.firePit) block = "Needs a fire pit.";
   else if (!hasAll(state.inventory, recipe.requires)) {
     block = `Need ${missingNames(state.inventory, recipe.requires, data).join(", ")}`;
-  } else block = timeBlock(state, recipe.hours, true);
+  } else if (plan.blocked) block = blockedText(plan, data);
   const needs = Object.entries(recipe.requires)
     .map(([id, qty]) => `${data.itemById.get(id)?.name ?? id} ×${qty}`)
     .join(", ");
-  const detail = block || `${recipe.hours}h · ${needs}`;
-  return button(`build-${recipe.id}`, "Build", label, detail, "", Boolean(block), {
+  let detail = block || `${planLabel(plan)} · ${needs}`;
+  let warning = "";
+  if (!block) {
+    const preview = previewLine(state, plan.hours, contextFor("build", atCamp(state)), data);
+    if (preview.warning) warning = preview.warning;
+    if (plan.torch) detail += " · burns a torch";
+  }
+  return button(`build-${recipe.id}`, recipe.grants === "item" ? "Build" : "Build", label, detail, warning, Boolean(block), {
     type: "build",
     recipeId: recipe.id,
   });
@@ -1078,32 +1208,48 @@ export function buildItemModal(
   const qtyLabel = item.unit === "L" ? `${qty.toFixed(1)} L` : qty > 1 ? `×${qty}` : "";
   const actions: ItemActionView[] = [];
   const discovery = data.discoveryByItemId.get(itemId);
+  const meat = data.wildlife.meat[itemId];
+  let blurb = presented.blurb;
 
   if (itemId === "water") {
-    actions.push(act("drink", `Drink ${data.needs.drinkLiters.toFixed(1)} L`, "Raises hydration. Does not take a work hour.", false, ""));
+    actions.push(act("drink", `Drink ${data.needs.drinkLiters.toFixed(1)} L`, "Raises hydration. Instant.", false, ""));
   } else if (itemId === "ration") {
     actions.push(act("eat", "Eat", "Calories, no experiment required.", false, ""));
-    if (state.camp.firePit && atCamp(state)) {
-      actions.push(act("warm", "Warm it on the fire", "A little more comfort.", false, ""));
+    if (canCook(state)) {
+      actions.push(act("warm", "Warm it on the fire", `A little more comfort. +${data.needs.ration.warmedHealth} health.`, false, ""));
     }
+  } else if (meat) {
+    const left = state.spoil[itemId];
+    if (left !== undefined) blurb = `${blurb} Turns in about ${Math.max(0, left)}h.`;
+    actions.push(act("eat", "Eat raw", `+${meat.raw.hunger} hunger now · about ${Math.round(meat.raw.sickChance * 100)}% it makes you sick`, false, ""));
+    const plan = planAction(state, meat.cook.hours, data);
+    const cookBlock = canCook(state) ? null : "Needs the lit fire pit at camp.";
+    actions.push(
+      act("cook", "Cook it", cookBlock ?? `${planLabel(plan)} · +${meat.cook.hunger} hunger · +${meat.cook.health} health · no sickness`, Boolean(cookBlock), cookBlock ?? ""),
+    );
   } else if (itemId === "field-manual") {
     const known = Boolean(journal.schematics["solar-still"]);
-    actions.push(act("read", known ? "Read it again" : "Read the page", known ? "You already know the still." : "1h. Teaches the solar still.", false, ""));
+    const plan = planAction(state, 1, data, { needsLight: true });
+    const block = known ? null : plan.blocked ? blockedText(plan, data) : null;
+    actions.push(act("read", known ? "Read it again" : "Read the page", block ?? (known ? "You already know the still." : `${planLabel(plan)} · teaches the solar still.`), Boolean(block), block ?? ""));
   } else if (itemId === "first-aid") {
     actions.push(act("use", "Use the kit", "Bites, stings, cuts. A sprain gets a day back.", false, ""));
   } else if (discovery) {
     const ids = presented.known ? discovery.knownActions : discovery.unknownActions;
     for (const id of ids) {
       if (id === "ignore") continue;
-      actions.push(discoveryAction(id, discovery, presented.known, state));
+      actions.push(discoveryAction(id, discovery, presented.known, state, data));
     }
+  } else if (data.wildlife.weapons.some((weapon) => weapon.id === itemId)) {
+    const best = bestWeapon(state, data);
+    blurb = `${blurb} ${best.id === itemId ? "This is what you will reach for if something rattles." : `You will reach for the ${best.name.toLowerCase()} first.`}`;
   }
 
   actions.push(act("ignore", "Close", "Put it back.", false, ""));
   return {
     itemId,
     title: presented.name,
-    blurb: presented.blurb,
+    blurb,
     known: presented.known,
     qtyLabel,
     actions,
@@ -1115,6 +1261,7 @@ function discoveryAction(
   discovery: DiscoveryDef,
   known: boolean,
   state: RunState,
+  data: GameData,
 ): ItemActionView {
   if (id === "ignore") return act("ignore", "Ignore", "Learn nothing.", false, "");
   if (id === "eat") {
@@ -1123,22 +1270,18 @@ function discoveryAction(
     return act("eat", discovery.boil ? "Drink raw" : "Eat anyway", "You know the cost.", false, "");
   }
   if (id === "experiment") {
-    const hours = discovery.experiment.hours ?? 1;
-    const block = timeBlock(state, hours, true);
-    return act("experiment", "Experiment", block ?? `${hours}h · a small test, then the truth`, Boolean(block), block ?? "");
+    const plan = planAction(state, discovery.experiment.hours ?? 1, data);
+    return act("experiment", "Experiment", `${planLabel(plan)} · a small test, then the truth`, false, "");
   }
   if (id === "prepare") {
-    const hours = discovery.prepare?.hours ?? 1;
-    const block = timeBlock(state, hours, true);
-    const fire = state.camp.firePit && atCamp(state) ? "Fire makes it better." : "Edible without a fire. Better at camp if the pit is lit.";
-    return act("prepare", "Prepare", block ?? `${hours}h · ${fire}`, Boolean(block), block ?? "");
+    const plan = planAction(state, discovery.prepare?.hours ?? 1, data);
+    const fire = canCook(state) ? "Fire makes it better." : "Edible without a fire. Better at camp if the pit is lit.";
+    return act("prepare", "Prepare", `${planLabel(plan)} · ${fire}`, false, "");
   }
   if (id === "boil") {
-    const hours = discovery.boil?.hours ?? 1;
-    let block: string | null = null;
-    if (!state.camp.firePit || !atCamp(state)) block = "Needs the fire pit at camp.";
-    else block = timeBlock(state, hours, true);
-    return act("boil", "Boil it", block ?? `${hours}h · makes ${discovery.boil?.yieldsWater ?? 0.5} L of clean water`, Boolean(block), block ?? "");
+    const plan = planAction(state, discovery.boil?.hours ?? 1, data);
+    const block = canCook(state) ? null : "Needs the fire pit at camp.";
+    return act("boil", "Boil it", block ?? `${planLabel(plan)} · makes ${discovery.boil?.yieldsWater ?? 0.5} L of clean water`, Boolean(block), block ?? "");
   }
   if (id === "poultice") {
     const burned = state.conditions.some((condition) => condition.id === "sunburn");

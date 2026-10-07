@@ -8,7 +8,6 @@
     "hydrationNoShelter": 10,
     "fatigue": 8,
     "shelterFatigue": 3,
-    "laborPenalty": 2,
     "logOpen": "A brown wall walks in off the flats. Without a shelter you take it on the skin: grit in the eyes, water you did not agree to spend.",
     "logShelter": "The sandstorm rakes the fuselage. In the shelter you listen to it and lose only a little of the day.",
     "journal": "Sandstorms pin you to camp. A dug shelter turns them into noise. Caught in the open, they strip water and hours. Do not travel while the air is brown."

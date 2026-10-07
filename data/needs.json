@@ -142,80 +142,12 @@
     "openDayDeltaC": 0,
     "openNightDeltaC": 0
   },
-  "actionBudget": {
-    "base": 12,
-    "minimum": 4,
-    "rules": [
-      {
-        "meter": "hydration",
-        "below": 50,
-        "delta": -1,
-        "note": "Thirst is shortening the day."
-      },
-      {
-        "meter": "hydration",
-        "below": 30,
-        "delta": -2,
-        "note": "Your mouth is dry. Work is slower."
-      },
-      {
-        "meter": "hydration",
-        "below": 15,
-        "delta": -2,
-        "note": "Dehydration is stealing hours."
-      },
-      {
-        "meter": "hunger",
-        "below": 40,
-        "delta": -1,
-        "note": "Hunger is making every task heavier."
-      },
-      {
-        "meter": "hunger",
-        "below": 20,
-        "delta": -2,
-        "note": "You are weak from lack of food."
-      },
-      {
-        "meter": "fatigue",
-        "above": 60,
-        "delta": -2,
-        "note": "Exhaustion is cutting the day short."
-      },
-      {
-        "meter": "fatigue",
-        "above": 85,
-        "delta": -2,
-        "note": "You can barely keep your eyes open."
-      },
-      {
-        "meter": "morale",
-        "below": 15,
-        "delta": -1,
-        "note": "Despair is slowing your hands."
-      },
-      {
-        "flag": "injured",
-        "delta": -2,
-        "note": "Pain is limiting what you can do."
-      },
-      {
-        "flag": "sunburn",
-        "delta": -1,
-        "note": "Sunburn makes every movement sting."
-      },
-      {
-        "flag": "gut",
-        "delta": -2,
-        "note": "Your stomach will not allow a full day."
-      }
-    ]
-  },
   "ration": {
     "hunger": 36,
     "morale": 3,
     "warmedHunger": 6,
-    "warmedMorale": 5
+    "warmedMorale": 5,
+    "warmedHealth": 2
   },
   "restHours": 2,
   "sandstormHydrationBonus": 1.6,
@@ -239,5 +171,153 @@
       "sleepOpen": "You scrape a hollow in the gravel and lie down in the open. Nothing between you and the sky.",
       "sleepOpenDone": "You come up stiff and gritty. It was sleep, mostly."
     }
+  },
+  "strain": {
+    "maxSlow": 1,
+    "rules": [
+      {
+        "meter": "hydration",
+        "below": 50,
+        "slow": 0.1,
+        "risk": 0.1,
+        "note": "Thirst slows your hands."
+      },
+      {
+        "meter": "hydration",
+        "below": 30,
+        "slow": 0.15,
+        "risk": 0.15,
+        "note": "Your mouth is dry. Every task drags."
+      },
+      {
+        "meter": "hydration",
+        "below": 15,
+        "slow": 0.2,
+        "risk": 0.2,
+        "note": "Dehydration makes you clumsy."
+      },
+      {
+        "meter": "hunger",
+        "below": 40,
+        "slow": 0.1,
+        "risk": 0.05,
+        "note": "Hunger makes every task heavier."
+      },
+      {
+        "meter": "hunger",
+        "below": 20,
+        "slow": 0.15,
+        "risk": 0.1,
+        "note": "You are weak from lack of food."
+      },
+      {
+        "meter": "morale",
+        "below": 15,
+        "slow": 0.1,
+        "risk": 0,
+        "note": "Despair is slowing your hands."
+      },
+      {
+        "flag": "injured",
+        "slow": 0.2,
+        "risk": 0.15,
+        "note": "Pain slows everything and makes you careless."
+      },
+      {
+        "flag": "sunburn",
+        "slow": 0.1,
+        "risk": 0,
+        "note": "Sunburn makes every movement sting."
+      },
+      {
+        "flag": "gut",
+        "slow": 0.2,
+        "risk": 0.1,
+        "note": "Your stomach keeps stopping you."
+      }
+    ]
+  },
+  "fatigue": {
+    "collapseAt": 100,
+    "tiers": [
+      {
+        "above": 60,
+        "mult": 1.25,
+        "risk": 1.25,
+        "label": "Tired",
+        "note": "Tired: work takes a quarter longer and you get careless."
+      },
+      {
+        "above": 85,
+        "mult": 1.5,
+        "risk": 1.6,
+        "label": "Exhausted",
+        "note": "Exhausted: work takes half again as long. You are close to dropping."
+      }
+    ],
+    "heatPerHour": {
+      "cold": 0,
+      "mild": 0,
+      "warm": 0.5,
+      "hot": 1.5,
+      "extreme": 3
+    }
+  },
+  "pace": {
+    "maxMult": 3
+  },
+  "darkness": {
+    "fromHour": 19,
+    "toHour": 6,
+    "timeMult": 1.6,
+    "torchTimeMult": 1.2,
+    "fireTimeMult": 1.15,
+    "hazardMult": {
+      "snakebite": 1.6,
+      "scorpion": 1.8,
+      "fall": 2.2,
+      "thorns": 1.4
+    },
+    "lightHazardScale": 0.4,
+    "blockedText": "Too dark. Needs light.",
+    "lightHint": "A lit fire pit at camp, or a torch."
+  },
+  "regen": {
+    "minHydration": 40,
+    "minHunger": 30,
+    "minBodyC": 36,
+    "maxBodyC": 38.6,
+    "rates": {
+      "sleep-shelter-fire": 1,
+      "sleep-shelter": 0.7,
+      "sleep-fire": 0.55,
+      "sleep-camp": 0.45,
+      "sleep-open": 0.15,
+      "rest-shelter": 0.4,
+      "rest-camp": 0.3,
+      "rest-shade": 0.3,
+      "wait-shelter": 0.3,
+      "wait-camp": 0.2,
+      "wait-open": 0.1,
+      "collapse": 0.1
+    }
+  },
+  "collapse": {
+    "fatigueMultiplier": 0.5,
+    "moralePerHour": -0.8,
+    "hazards": [
+      {
+        "id": "scorpion",
+        "chance": 0.15
+      },
+      {
+        "id": "snakebite",
+        "chance": 0.06
+      }
+    ],
+    "logOpen": "Your legs stop asking permission. You go down where you stand, in the open, and the world goes out.",
+    "logCamp": "You make it as far as the wreck and no farther. You are asleep before you finish falling.",
+    "logWake": "You come to at first light, stiff, sunk in the gravel, unsure how long the dark was.",
+    "warning": "Collapse: fatigue will hit 100"
   }
 }

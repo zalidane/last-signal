@@ -1,0 +1,184 @@
+{
+  "sighting": {
+    "zoneChance": {
+      "wreckage-field": 0.04,
+      "dry-wash": 0.14,
+      "rocky-ridge": 0.13
+    },
+    "triggerMult": {
+      "search": 1,
+      "travel": 0.8,
+      "rest": 0.6
+    },
+    "bandMult": {
+      "cold": 1.2,
+      "mild": 1.5,
+      "warm": 1,
+      "hot": 0.6,
+      "extreme": 0.35
+    },
+    "darkMult": 1.3
+  },
+  "animals": [
+    {
+      "id": "rattlesnake",
+      "name": "Rattlesnake",
+      "zoneWeight": {
+        "wreckage-field": 1,
+        "dry-wash": 3,
+        "rocky-ridge": 3
+      },
+      "strikeHazard": "snakebite",
+      "backAwayStrike": 0.12,
+      "meat": {
+        "item": "snake-meat",
+        "qty": 1
+      },
+      "killFatigue": 4,
+      "sightLog": "A dry rattle from the shade under a rock. A rattlesnake, coiled, deciding about you.",
+      "backAwayLog": "You step back slowly, then again. The rattle fades. Nothing gained, nothing lost.",
+      "backAwayStrikeLog": "You step back and the snake decides anyway. A punch in the calf.",
+      "killLog": "You pin it and finish it. Then you keep well clear of the head, which is still opening and closing.",
+      "failLog": "You go for it and it is faster. A punch in the forearm.",
+      "escapeLog": "You swing and miss. The snake pours itself into a crack and is gone.",
+      "journal": {
+        "id": "rattlesnake",
+        "name": "Rattlesnake",
+        "text": "A rattlesnake is food if you cook it. Its head can still bite after it is dead."
+      }
+    },
+    {
+      "id": "scorpion",
+      "name": "Bark scorpion",
+      "zoneWeight": {
+        "wreckage-field": 2,
+        "dry-wash": 2,
+        "rocky-ridge": 2
+      },
+      "strikeHazard": "scorpion",
+      "backAwayStrike": 0.08,
+      "meat": {
+        "item": "scorpion-meat",
+        "qty": 1
+      },
+      "killFatigue": 1,
+      "sightLog": "A pale scorpion on the rock by your hand, tail up, very still.",
+      "backAwayLog": "You take your hand back and give it the rock.",
+      "backAwayStrikeLog": "You pull back a fraction too slowly. The sting is a hot nail.",
+      "killLog": "You crush it and pinch the stinger off. It is a mouthful, but it is a mouthful.",
+      "failLog": "You miss, and it does not. The sting is a hot nail in the wrist.",
+      "escapeLog": "It skitters under the rock before you connect.",
+      "journal": {
+        "id": "scorpion-food",
+        "name": "Scorpion",
+        "text": "Scorpions are edible cooked once the stinger is off."
+      }
+    }
+  ],
+  "weapons": [
+    {
+      "id": "none",
+      "name": "Bare hands and a rock",
+      "tier": 0,
+      "kill": {
+        "rattlesnake": 0.25,
+        "scorpion": 0.4
+      },
+      "failStrike": 0.9
+    },
+    {
+      "id": "club",
+      "name": "Club",
+      "tier": 1,
+      "kill": {
+        "rattlesnake": 0.6,
+        "scorpion": 0.7
+      },
+      "failStrike": 0.7
+    },
+    {
+      "id": "knife",
+      "name": "Knife",
+      "tier": 2,
+      "kill": {
+        "rattlesnake": 0.65,
+        "scorpion": 0.8
+      },
+      "failStrike": 0.75
+    },
+    {
+      "id": "spear",
+      "name": "Spear",
+      "tier": 3,
+      "kill": {
+        "rattlesnake": 0.78,
+        "scorpion": 0.72
+      },
+      "failStrike": 0.5
+    }
+  ],
+  "killMods": {
+    "darkNoLight": 0.75,
+    "exhausted": 0.85,
+    "min": 0.05,
+    "max": 0.95
+  },
+  "meat": {
+    "snake-meat": {
+      "spoilHours": 24,
+      "raw": {
+        "hunger": 18,
+        "morale": -2,
+        "sickChance": 0.35,
+        "sick": [
+          {
+            "id": "stomach",
+            "hours": 10
+          },
+          {
+            "id": "diarrhea",
+            "hours": 12
+          }
+        ],
+        "log": "You chew it raw. Stringy, cold, and it is food.",
+        "sickLog": "An hour later your gut turns over. Raw snake was a bad bet.",
+        "journal": {
+          "id": "raw-snake",
+          "name": "Raw snake meat",
+          "text": "Raw snake meat can make you sick. Cook it on the fire pit."
+        }
+      },
+      "cook": {
+        "hours": 1,
+        "hunger": 30,
+        "health": 3,
+        "morale": 5,
+        "log": "Over the fire pit the meat whitens and drips. It tastes like a decision that worked."
+      }
+    },
+    "scorpion-meat": {
+      "spoilHours": 24,
+      "raw": {
+        "hunger": 4,
+        "morale": -3,
+        "sickChance": 0.2,
+        "sick": [
+          {
+            "id": "nausea",
+            "hours": 6
+          }
+        ],
+        "log": "You crunch it raw. It is mostly shell.",
+        "sickLog": "Your stomach does not agree with the shell or the venom sac."
+      },
+      "cook": {
+        "hours": 1,
+        "hunger": 8,
+        "health": 1,
+        "morale": 2,
+        "log": "Roasted on a stone, the scorpion is crisp and faintly like shrimp."
+      }
+    }
+  },
+  "spoilLog": "The {name} has turned in the heat. You leave it for the ants."
+}

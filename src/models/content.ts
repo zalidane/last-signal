@@ -15,6 +15,7 @@ import events from "../../data/events.json";
 import lessons from "../../data/lessons.json";
 import copy from "../../data/copy.json";
 import schematics from "../../data/schematics.json";
+import wildlife from "../../data/wildlife.json";
 
 function indexBy<T extends { id: string }>(rows: T[]): Map<string, T> {
   return new Map(rows.map((row) => [row.id, row]));
@@ -51,7 +52,10 @@ export function createGameData(): GameData {
     copy: copy as unknown as GameData["copy"],
     schematics: schematicRows,
     schematicById: indexBy(schematicRows),
+    wildlife: wildlife as unknown as GameData["wildlife"],
+    animalById: new Map(),
   };
+  data.animalById = indexBy(data.wildlife.animals);
   assertContent(data);
   return data;
 }
@@ -85,10 +89,22 @@ export function assertContent(data: GameData): void {
     "starvation",
     "injury",
     "sickness",
+    "exhaustion",
     "rescued",
   ];
   for (const key of lessonKeys) need(Boolean(data.lessons[key]), `missing lesson ${key}`);
   need(Boolean(data.schematicById.get("solar-still")), "solar still schematic");
+  for (const animal of data.wildlife.animals) {
+    need(data.hazardById.has(animal.strikeHazard), `${animal.id} strike hazard`);
+    need(data.itemById.has(animal.meat.item), `${animal.id} meat item`);
+    need(Boolean(data.wildlife.meat[animal.meat.item]), `${animal.id} meat def`);
+  }
+  for (const weapon of data.wildlife.weapons) {
+    need(weapon.id === "none" || data.itemById.has(weapon.id), `weapon ${weapon.id}`);
+  }
+  for (const recipe of data.recipes) {
+    for (const id of Object.keys(recipe.yields ?? {})) need(data.itemById.has(id), `${recipe.id} yields ${id}`);
+  }
 }
 
 export const gameData = createGameData();

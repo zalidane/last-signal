@@ -28,7 +28,7 @@
     "effect": { "health": -6, "morale": -5, "fatigue": 10 },
     "condition": { "id": "scorpion", "hours": 12 },
     "log": "You move a stone and the stone disagrees. The sting is a hot nail in the wrist.",
-    "journal": "Scorpions shelter in shoes, sleeves, and under rocks, especially at night. A sting ruins sleep and steals hours. Shake out cloth. A fire at camp keeps most of them off you."
+    "journal": "Scorpions shelter in shoes, sleeves, and under rocks, especially at night. A sting ruins sleep and slows every task. Shake out cloth. A fire at camp keeps most of them off you."
   },
   {
     "id": "sunburn",
@@ -39,7 +39,7 @@
     "condition": { "id": "sunburn", "hours": 28 },
     "effect": { "morale": -3 },
     "log": "The sun finds the back of your neck and writes on it. You will feel this tomorrow.",
-    "journal": "Open travel in the hot hours burns skin fast. Sunburn shortens the next day and makes heat worse. Shade, a shelter, and a creosote poultice are the answers. Heroics are not."
+    "journal": "Open travel in the hot hours burns skin fast. Sunburn slows you down and makes heat worse. Shade, a shelter, and a creosote poultice are the answers. Heroics are not."
   },
   {
     "id": "fall",

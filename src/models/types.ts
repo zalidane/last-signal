@@ -9,6 +9,7 @@ export type Threat =
   | "starvation"
   | "injury"
   | "sickness"
+  | "exhaustion"
   | "rescued";
 
 export type BudgetFlag = "injured" | "sunburn" | "gut";
@@ -31,12 +32,22 @@ export interface ActivityRates {
   exertionC: number;
 }
 
-export interface BudgetRule {
-  meter?: "hydration" | "hunger" | "fatigue" | "morale";
+/** A low meter or a wound no longer shortens a work day: it slows actions and raises hazard odds. */
+export interface StrainRule {
+  meter?: "hydration" | "hunger" | "morale";
   below?: number;
   above?: number;
   flag?: BudgetFlag;
-  delta: number;
+  slow: number;
+  risk: number;
+  note: string;
+}
+
+export interface FatigueTier {
+  above: number;
+  mult: number;
+  risk: number;
+  label: string;
   note: string;
 }
 
@@ -90,12 +101,46 @@ export interface NeedsConfig {
     /** Waiting in the open away from camp, at night: nothing between you and the sky. */
     openNightDeltaC: number;
   };
-  actionBudget: { base: number; minimum: number; rules: BudgetRule[] };
+  strain: { maxSlow: number; rules: StrainRule[] };
+  fatigue: {
+    collapseAt: number;
+    tiers: FatigueTier[];
+    heatPerHour: Record<BandId, number>;
+  };
+  pace: { maxMult: number };
+  darkness: {
+    fromHour: number;
+    toHour: number;
+    timeMult: number;
+    torchTimeMult: number;
+    fireTimeMult: number;
+    hazardMult: Record<string, number>;
+    lightHazardScale: number;
+    blockedText: string;
+    lightHint: string;
+  };
+  regen: {
+    minHydration: number;
+    minHunger: number;
+    minBodyC: number;
+    maxBodyC: number;
+    rates: Record<string, number>;
+  };
+  collapse: {
+    fatigueMultiplier: number;
+    moralePerHour: number;
+    hazards: { id: string; chance: number }[];
+    logOpen: string;
+    logCamp: string;
+    logWake: string;
+    warning: string;
+  };
   ration: {
     hunger: number;
     morale: number;
     warmedHunger: number;
     warmedMorale: number;
+    warmedHealth: number;
   };
   restHours: number;
   sandstormHydrationBonus: number;
@@ -206,6 +251,7 @@ export interface EffectDef {
 
 export interface PrepareDef extends EffectDef {
   fireBonus?: {
+    health?: number;
     hunger?: number;
     hydration?: number;
     morale?: number;
@@ -254,7 +300,13 @@ export interface RecipeDef {
   hours: number;
   where: string[];
   requires: Record<string, number>;
-  grants: "shelter" | "firePit" | "solarStill" | "signalFire";
+  grants: "shelter" | "firePit" | "solarStill" | "signalFire" | "item";
+  /** For grants "item": what lands in the pack. */
+  yields?: Record<string, number>;
+  /** For grants "item": hide the recipe once you carry this many. */
+  maxCarry?: number;
+  /** Fine work: impossible in the dark without a lit camp fire or a torch. */
+  needsLight?: boolean;
   schematic?: string;
   max?: number;
   requiresFlag?: "firePit";
@@ -279,6 +331,8 @@ export interface ZoneDef {
   travelHours: number;
   searchHours: number;
   exposure: number;
+  /** Searching here in the dark needs light. */
+  searchNeedsLight?: boolean;
   blurb: string;
   arriveLog: string;
   loot: LootEntry[];
@@ -318,7 +372,6 @@ export interface EventsConfig {
     hydrationNoShelter: number;
     fatigue: number;
     shelterFatigue: number;
-    laborPenalty: number;
     logOpen: string;
     logShelter: string;
     journal: string;
@@ -356,6 +409,59 @@ export interface CopyConfig {
   classified: string;
 }
 
+export interface AnimalDef {
+  id: string;
+  name: string;
+  zoneWeight: Record<string, number>;
+  strikeHazard: string;
+  backAwayStrike: number;
+  meat: { item: string; qty: number };
+  killFatigue: number;
+  sightLog: string;
+  backAwayLog: string;
+  backAwayStrikeLog: string;
+  killLog: string;
+  failLog: string;
+  escapeLog: string;
+  journal: { id: string; name: string; text: string };
+}
+
+export interface WeaponDef {
+  id: string;
+  name: string;
+  tier: number;
+  kill: Record<string, number>;
+  failStrike: number;
+}
+
+export interface MeatDef {
+  spoilHours: number;
+  raw: {
+    hunger: number;
+    morale: number;
+    sickChance: number;
+    sick: { id: string; hours: number }[];
+    log: string;
+    sickLog: string;
+    journal?: { id: string; name: string; text: string };
+  };
+  cook: { hours: number; hunger: number; health: number; morale: number; log: string };
+}
+
+export interface WildlifeConfig {
+  sighting: {
+    zoneChance: Record<string, number>;
+    triggerMult: Record<string, number>;
+    bandMult: Record<BandId, number>;
+    darkMult: number;
+  };
+  animals: AnimalDef[];
+  weapons: WeaponDef[];
+  killMods: { darkNoLight: number; exhausted: number; min: number; max: number };
+  meat: Record<string, MeatDef>;
+  spoilLog: string;
+}
+
 export interface SchematicDef {
   id: string;
   name: string;
@@ -387,6 +493,8 @@ export interface GameData {
   copy: CopyConfig;
   schematics: SchematicDef[];
   schematicById: Map<string, SchematicDef>;
+  wildlife: WildlifeConfig;
+  animalById: Map<string, AnimalDef>;
 }
 
 export interface ConditionInstance {
@@ -450,13 +558,15 @@ export interface Ending {
   biomeName: string;
 }
 
+export interface Sighting {
+  type: "sighting";
+  animalId: string;
+}
+
 export interface RunState {
   seed: number;
   day: number;
   hour: number;
-  laborHours: number;
-  laborMax: number;
-  laborNotes: string[];
   health: number;
   hunger: number;
   hydration: number;
@@ -482,6 +592,10 @@ export interface RunState {
   sandstorm: boolean;
   nextStillId: number;
   ending: Ending | null;
+  /** A choice the game is waiting on. While set, only its answers are legal. */
+  pending: Sighting | null;
+  /** Hours until uncooked meat in the pack turns. Keyed by item id. */
+  spoil: Record<string, number>;
 }
 
 export interface JournalEntry {
@@ -519,6 +633,8 @@ export interface HourContext {
   activity: Activity;
   atCamp: boolean;
   exposure: number;
+  /** Forced sleep after fatigue hit 100: poor recovery. */
+  collapsed?: boolean;
 }
 
 export interface HealthParts {
@@ -542,6 +658,7 @@ export type Command =
   | { type: "search" }
   | { type: "build"; recipeId: string }
   | { type: "douse-signal" }
+  | { type: "sighting"; choice: "back-away" | "kill" }
   | { type: "open-journal" }
   | { type: "close-journal" }
   | { type: "open-item"; itemId: string }
@@ -611,11 +728,11 @@ export interface PlayView {
   locationId: string;
   locationName: string;
   locationBlurb: string;
-  laborHours: number;
-  laborMax: number;
-  laborNotes: string[];
-  forecastHours: number;
-  forecastNotes: string[];
+  /** Current action-time multiplier and why. Replaces the old work-hour budget. */
+  pace: { mult: number; label: string; notes: string[] };
+  dark: boolean;
+  lightLabel: string;
+  sighting: SightingView | null;
   meters: MeterView[];
   conditions: string[];
   tierLevel: number;
@@ -634,6 +751,13 @@ export interface PlayView {
   log: { id: number; stamp: string; text: string }[];
   pins: ZonePin[];
   classified: string;
+}
+
+export interface SightingView {
+  animalName: string;
+  text: string;
+  weaponName: string;
+  killOdds: number;
 }
 
 export interface EndView {
@@ -667,6 +791,7 @@ export interface JournalView {
 
 export interface ViewModel {
   screen: "title" | "play" | "end";
+  notice: string | null;
   journalOpen: boolean;
   title: string;
   tagline: string;

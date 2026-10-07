@@ -1,4 +1,5 @@
 import type { GameData, Journal, JournalEntry, LessonEntry, RunState } from "../models/types.ts";
+import { wildlifeJournalEntries } from "./wildlife.ts";
 
 export const JOURNAL_KEY = "last-signal.journal.v1";
 
@@ -115,6 +116,7 @@ export function journalCompletion(journal: Journal, data: GameData): number {
     ...data.schematics.map((s) => s.id),
     ...data.hazards.map((h) => h.id),
     data.events.sandstorm.id,
+    ...wildlifeJournalEntries(data).map((entry) => entry.id),
   ];
   if (ids.length === 0) return 0;
   const known = ids.filter(

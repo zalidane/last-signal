@@ -184,8 +184,13 @@ export function applyHour(state: RunState, ctx: HourContext, data: GameData): Ru
   next.hydration = clamp(next.hydration - hydrationLoss, 0, 100);
   next.hunger = clamp(next.hunger - rates.hunger, 0, 100);
   const openSleep = ctx.activity === "sleep" && !ctx.atCamp ? data.needs.wait.openSleep : null;
-  const fatigueRate = openSleep && rates.fatigue < 0 ? rates.fatigue * openSleep.fatigueMultiplier : rates.fatigue;
-  const moraleRate = openSleep ? openSleep.moralePerHour : rates.morale;
+  let fatigueRate = openSleep && rates.fatigue < 0 ? rates.fatigue * openSleep.fatigueMultiplier : rates.fatigue;
+  let moraleRate = openSleep ? openSleep.moralePerHour : rates.morale;
+  if (ctx.collapsed) {
+    fatigueRate = rates.fatigue * data.needs.collapse.fatigueMultiplier;
+    moraleRate = data.needs.collapse.moralePerHour;
+  }
+  if (isExertion(ctx.activity)) fatigueRate += data.needs.fatigue.heatPerHour[band.id] ?? 0;
   next.fatigue = clamp(next.fatigue + fatigueRate, 0, 100);
   next.morale = clamp(next.morale + moraleRate, 0, 100);
 
@@ -200,6 +205,15 @@ export function applyHour(state: RunState, ctx: HourContext, data: GameData): Ru
       next.phase = "ended";
       next.pendingCause = threat ?? next.lastThreat ?? "dehydration";
     }
+  }
+
+  if (loss <= 0 && next.phase !== "ended") {
+    const regen = regenRate(next, ctx, data);
+    if (regen > 0) next.health = Math.min(100, next.health + regen);
+  }
+
+  for (const id of Object.keys(next.spoil ?? {})) {
+    next.spoil[id] = (next.spoil[id] ?? 0) - 1;
   }
 
   next.conditions = tickConditions(next);
@@ -226,9 +240,9 @@ export function advanceTime(
   for (let i = 0; i < hours; i += 1) {
     current = applyHour(current, ctx, data);
     if (current.phase === "ended") return current;
-    const reconciled = reconcileLabor(current, data);
-    current = reconciled.state;
-    if (reconciled.note && onNote) current = onNote(current, reconciled.note);
+    const spoiled = spoilMeat(current, data);
+    current = spoiled.state;
+    if (onNote) for (const note of spoiled.notes) current = onNote(current, note);
     const hour = (current.hour + 1) % 24;
     current = { ...current, hour };
     if (hour === 6) {
@@ -240,54 +254,70 @@ export function advanceTime(
   return current;
 }
 
-export function reconcileLabor(
-  state: RunState,
-  data: GameData,
-): { state: RunState; note: string | null } {
-  if (state.phase === "ended") return { state, note: null };
-  const budget = computeBudget(state, data);
-  if (budget.hours < state.laborMax) {
-    const laborHours = Math.max(0, state.laborHours - (state.laborMax - budget.hours));
-    const note = `The day shrinks. ${laborHours} work ${laborHours === 1 ? "hour" : "hours"} left.`;
-    return {
-      note,
-      state: {
-        ...state,
-        laborMax: budget.hours,
-        laborHours,
-        laborNotes: budget.notes,
-      },
-    };
+export function isExertion(activity: Activity): boolean {
+  return activity === "camp" || activity === "build" || activity === "search" || activity === "travel";
+}
+
+/** Which regen row applies, or null while working. */
+export function regenContext(state: RunState, ctx: HourContext): string | null {
+  if (ctx.collapsed) return "collapse";
+  const shelter = ctx.atCamp && state.camp.shelter;
+  const fire = ctx.atCamp && state.camp.firePit;
+  if (ctx.activity === "sleep") {
+    if (!ctx.atCamp) return "sleep-open";
+    if (shelter && fire) return "sleep-shelter-fire";
+    if (shelter) return "sleep-shelter";
+    if (fire) return "sleep-fire";
+    return "sleep-camp";
   }
-  return { state, note: null };
+  if (ctx.activity === "rest") return shelter ? "rest-shelter" : ctx.atCamp ? "rest-camp" : "rest-shade";
+  if (ctx.activity === "wait") return !ctx.atCamp ? "wait-open" : shelter ? "wait-shelter" : "wait-camp";
+  return null;
 }
 
-export interface BudgetResult {
-  hours: number;
-  notes: string[];
+/** Health comes back only while still, fed, watered, at a normal temperature, and with no draining wound. */
+export function regenBlockers(state: RunState, data: GameData): string[] {
+  const r = data.needs.regen;
+  const out: string[] = [];
+  if (state.hydration <= r.minHydration) out.push("thirsty");
+  if (state.hunger <= r.minHunger) out.push("hungry");
+  if (state.bodyTempC < r.minBodyC) out.push("cold");
+  if (state.bodyTempC > r.maxBodyC) out.push("overheated");
+  const draining = state.conditions.some((condition) => {
+    const def = data.conditions[condition.id];
+    return Boolean(def) && condition.hoursLeft > 0 && (def?.healthPerHour ?? 0) > 0;
+  });
+  if (draining) out.push("wounded");
+  return out;
 }
 
-/** Imported lazily-shaped helper kept here so hour ticks and dawn share one formula. */
-export function computeBudget(state: RunState, data: GameData): BudgetResult {
-  const rules = data.needs.actionBudget;
-  let hours = rules.base;
+export function regenRate(state: RunState, ctx: HourContext, data: GameData): number {
+  const key = regenContext(state, ctx);
+  if (!key) return 0;
+  if (regenBlockers(state, data).length > 0) return 0;
+  return data.needs.regen.rates[key] ?? 0;
+}
+
+function spoilMeat(state: RunState, data: GameData): { state: RunState; notes: string[] } {
   const notes: string[] = [];
-  for (const rule of rules.rules) {
-    let hit = false;
-    if (rule.meter) {
-      const value = state[rule.meter];
-      if (rule.below !== undefined && value < rule.below) hit = true;
-      if (rule.above !== undefined && value > rule.above) hit = true;
+  let next = state;
+  for (const [id, left] of Object.entries(state.spoil ?? {})) {
+    if ((next.inventory[id] ?? 0) <= 0) {
+      const spoil = { ...next.spoil };
+      delete spoil[id];
+      next = { ...next, spoil };
+      continue;
     }
-    if (rule.flag && hasBudgetFlag(state, data, rule.flag)) hit = true;
-    if (hit) {
-      hours += rule.delta;
-      notes.push(rule.note);
-    }
+    if (left > 0) continue;
+    const inventory = { ...next.inventory };
+    delete inventory[id];
+    const spoil = { ...next.spoil };
+    delete spoil[id];
+    next = { ...next, inventory, spoil };
+    const name = data.itemById.get(id)?.name.toLowerCase() ?? id;
+    notes.push(data.wildlife.spoilLog.replace("{name}", name));
   }
-  hours = Math.max(rules.minimum, hours);
-  if (notes.length === 0) notes.push("You are intact. The day is full length.");
-  return { hours, notes };
+  return { state: next, notes };
 }
 
 export function hasBudgetFlag(
