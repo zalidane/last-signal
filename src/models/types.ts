@@ -454,6 +454,8 @@ export interface AnimalDef {
   meat: { item: string; qty: number };
   killFatigue: number;
   sightLog: string;
+  ambushLog: string;
+  letGoLog: string;
   backAwayLog: string;
   backAwayStrikeLog: string;
   killLog: string;
@@ -566,6 +568,7 @@ export interface WildlifeConfig {
   };
   animals: AnimalDef[];
   weapons: WeaponDef[];
+  ambush: { chance: number; killBonus: number; note: string };
   killMods: { darkNoLight: number; exhausted: number; min: number; max: number };
   meat: Record<string, MeatDef>;
   spoilLog: string;
@@ -674,6 +677,8 @@ export interface Ending {
 export interface Sighting {
   type: "sighting";
   animalId: string;
+  /** It struck first. Backing away is free now, and it is easier to kill since you can see it. */
+  ambush?: boolean;
 }
 
 export interface RunState {

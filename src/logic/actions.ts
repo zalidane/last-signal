@@ -1102,8 +1102,8 @@ function sightingButtons(state: RunState, data: GameData): ActionButton[] {
     button(
       "sighting-back",
       "Now",
-      "Back away",
-      `Small chance it strikes anyway (${Math.round(animal.backAwayStrike * 100)}%)`,
+      pending?.ambush ? "Let it go" : "Back away",
+      pending?.ambush ? "It already struck. It will not again." : `Small chance it strikes anyway (${Math.round(animal.backAwayStrike * 100)}%)`,
       "",
       false,
       { type: "sighting", choice: "back-away" },
@@ -1111,7 +1111,7 @@ function sightingButtons(state: RunState, data: GameData): ActionButton[] {
     button(
       "sighting-kill",
       "Now",
-      `Try to kill the ${animal.name.toLowerCase()}`,
+      pending?.ambush ? `Kill it for the meat` : `Try to kill the ${animal.name.toLowerCase()}`,
       `${weapon.name} · about ${Math.round(odds * 100)}% to kill · ${miss}% it ${animal.strikeHazard === "snakebite" ? "bites" : "stings"} you${snap > 0 ? ` · ${snap}% the weapon comes apart` : ""}`,
       miss >= 50 ? "Risky with what you are holding" : "",
       false,

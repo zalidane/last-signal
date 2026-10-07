@@ -52,7 +52,9 @@
           "qty": 1,
           "log": "You strip the sinew from its back and set it to dry. It will bind better than anything in the wreck."
         }
-      ]
+      ],
+      "ambushLog": "A buzz, then a punch in the calf. The snake is still there, coiled at the edge of the shade. Now you can see exactly where it is.",
+      "letGoLog": "You back off and let it have the shade. The bite comes with you."
     },
     {
       "id": "scorpion",
@@ -79,7 +81,9 @@
         "id": "scorpion-food",
         "name": "Scorpion",
         "text": "Scorpions are edible cooked once the stinger is off."
-      }
+      },
+      "ambushLog": "You move a stone and the stone disagrees. The sting is a hot nail in the wrist. The scorpion is still on the rock, tail up, in plain sight.",
+      "letGoLog": "You leave it the rock and nurse the wrist."
     }
   ],
   "weapons": [
@@ -200,5 +204,10 @@
       }
     }
   },
-  "spoilLog": "The {name} has turned in the heat. You leave it for the ants."
+  "spoilLog": "The {name} has turned in the heat. You leave it for the ants.",
+  "ambush": {
+    "chance": 0.25,
+    "killBonus": 0.15,
+    "note": "Awake encounters from the hazard roll open a sighting. This share are ambushes: it strikes first, then you can still try to kill it."
+  }
 }

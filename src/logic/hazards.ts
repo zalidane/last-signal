@@ -92,6 +92,21 @@ export function rollHazards(
     chance = Math.min(chance, 0.95);
     if (chance <= 0) continue;
     if (rng.next() >= chance) continue;
+    // Awake and it is an animal: never a silent sting. It becomes a sighting (sometimes an ambush first).
+    const animal = data.wildlife.animals.find((entry) => entry.strikeHazard === hazard.id);
+    if (animal) {
+      if (current.pending) continue;
+      if (rng.next() < data.wildlife.ambush.chance) {
+        const struck = applyHazard(current, journal, hazard, data, animal.ambushLog);
+        journal = struck.journal;
+        current = struck.state;
+        if (current.phase === "ended") break;
+        current = { ...current, pending: { type: "sighting", animalId: animal.id, ambush: true } };
+      } else {
+        current = pushLog({ ...current, pending: { type: "sighting", animalId: animal.id } }, animal.sightLog);
+      }
+      continue;
+    }
     const applied = applyHazard(current, journal, hazard, data);
     current = applied.state;
     journal = applied.journal;

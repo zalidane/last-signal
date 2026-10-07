@@ -196,7 +196,7 @@ export function projectPlay(state: RunState, journal: Journal, data: GameData): 
     sighting: animal
       ? {
           animalName: animal.name,
-          text: animal.sightLog,
+          text: state.pending?.ambush ? `${animal.ambushLog} ${"It is revealed: easier to kill now."}` : animal.sightLog,
           weaponName: weapon.name,
           killOdds: killOdds(state, animal, weapon, data),
         }

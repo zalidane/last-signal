@@ -40,6 +40,8 @@ export function killOdds(state: RunState, animal: AnimalDef, weapon: WeaponDef, 
   const tier = fatigueTier(state.fatigue, data);
   const top = data.needs.fatigue.tiers[data.needs.fatigue.tiers.length - 1];
   if (tier && top && tier.above >= top.above) odds *= mods.exhausted;
+  // An ambusher has given itself away: a flat bonus after light and fatigue.
+  if (state.pending?.ambush) odds += data.wildlife.ambush.killBonus;
   return clamp(round2(odds), mods.min, mods.max);
 }
 
@@ -99,13 +101,14 @@ export function resolveSighting(
   let next: RunState = { ...state, pending: null };
   if (!animal) return { state: next, journal };
 
+  if (choice === "back-away" && pending.ambush) return { state: pushLog(next, animal.letGoLog), journal };
   if (choice === "back-away") {
     if (rng.next() < animal.backAwayStrike) return strike(next, journal, animal, data, animal.backAwayStrikeLog);
     return { state: pushLog(next, animal.backAwayLog), journal };
   }
 
   const weapon = bestWeapon(next, data, animal);
-  const odds = killOdds(next, animal, weapon, data);
+  const odds = killOdds(state, animal, weapon, data);
   next = { ...next, fatigue: clamp(next.fatigue + animal.killFatigue, 0, 100) };
   if (rng.next() < odds) {
     const meat = data.wildlife.meat[animal.meat.item];
