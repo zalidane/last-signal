@@ -243,3 +243,6 @@ Completion is the share of discoveries, schematics, and hazards (including sands
 ## What does not carry
 
 Health, supplies, buildings, injuries, and the seed's rescue day. A new run is a new body. The journal only renames what you already paid to learn, and unlocks the still recipe.
+
+### Dawn while awake (v8)
+Crossing 06:00 always rolls the day: day++, the "Day N." line (logged before any day events), stills, signal-fire fuel, rescue check, sandstorm roll. Night events that assume you are in the blankets (the no-fire scorpion visitor) fire only if you were **sleeping at camp** when the clock crossed dawn. Travelling, searching, waiting, or building through dawn never triggers them; awake animal encounters go through the v7 sighting prompt instead. A dawn sandstorm only counts the shelter if you are at camp, so a storm that catches you mid-walk hits you in the open.

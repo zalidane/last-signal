@@ -1,4 +1,4 @@
-import type { GameData, Journal, RunState } from "../models/types.ts";
+import type { GameData, HourContext, Journal, RunState } from "../models/types.ts";
 import { hurt } from "./effects.ts";
 import { conclude } from "./ending.ts";
 import { applyHazard } from "./hazards.ts";
@@ -21,11 +21,16 @@ export function resolveDawn(
   journal: Journal,
   data: GameData,
   rng: Rng,
+  ctx: Pick<HourContext, "activity" | "atCamp"> = { activity: "sleep", atCamp: true },
 ): { state: RunState; journal: Journal } {
+  // Night events in the blankets need someone asleep in the blankets: at camp, sleeping.
+  const inBlankets = ctx.activity === "sleep" && ctx.atCamp;
+  // Shelter only counts if you are actually at camp (not walking, not out in a zone).
+  const sheltered = ctx.atCamp && ctx.activity !== "travel" && state.camp.shelter;
   let current: RunState = { ...state, pearsToday: 0 };
   if (current.phase === "ended") return { state: current, journal };
 
-  if (!current.camp.firePit) {
+  if (inBlankets && !current.camp.firePit) {
     const visit = data.events.nightVisitor;
     const chance = current.camp.shelter ? visit.shelterChance : visit.chance;
     if (rng.next() < chance) {
@@ -80,6 +85,9 @@ export function resolveDawn(
     }
   }
 
+  const dawnLine = data.copy.dawnLines[(current.day - 1) % data.copy.dawnLines.length] ?? "";
+  current = pushLog(current, `Day ${current.day}. ${dawnLine}`);
+
   const effective = effectiveRescueDay(
     current.rescue.baseDay,
     current.rescue.signalDays,
@@ -102,7 +110,7 @@ export function resolveDawn(
     });
     journal = learned.journal;
     if (learned.learned) current = noteRunHazard(current, stormDef.id);
-    if (current.camp.shelter) {
+    if (sheltered) {
       current = {
         ...current,
         fatigue: clamp(current.fatigue + stormDef.shelterFatigue, 0, 100),
@@ -121,7 +129,5 @@ export function resolveDawn(
   }
 
   current = { ...current, sandstorm: storm };
-  const dawnLine = data.copy.dawnLines[(current.day - 1) % data.copy.dawnLines.length] ?? "";
-  current = pushLog(current, `Day ${current.day}. ${dawnLine}`);
   return { state: current, journal };
 }

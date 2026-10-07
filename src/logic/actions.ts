@@ -85,7 +85,7 @@ function runHours(
         ready = pre.state;
         journalNow = pre.journal;
       }
-      const dawned = resolveDawn(ready, journalNow, data, rng);
+      const dawned = resolveDawn(ready, journalNow, data, rng, ctx);
       journalNow = dawned.journal;
       return dawned.state;
     },
