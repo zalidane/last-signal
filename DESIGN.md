@@ -103,6 +103,17 @@ Cooked food heals a little at once: warmed ration +2, fire-prepared prickly pear
 - **Meat**: rattlesnake meat or a scorpion. *Eat raw*: snake +18 hunger with 35% stomach cramps and diarrhea; scorpion +4 with 20% nausea. *Cook it* (lit fire pit at camp, 1h before pace): snake +30 hunger, +3 health, +5 morale; scorpion +8, +1, +2; never sick. Uncooked meat turns after 24h (all of that kind in the pack at once).
 - **Journal**: first kill of each animal and first sickness from raw snake each write an entry ("A rattlesnake is food if you cook it. Its head can still bite after it is dead." / "Scorpions are edible cooked once the stinger is off." / "Raw snake meat can make you sick. Cook it on the fire pit."). They count toward completion.
 
+## Wound care (v5)
+
+`data/woundcare.json`, conditions in `data/conditions.json`. Visible from the first run (not a schematic).
+
+- **Bandage the wound** appears whenever you have a laceration: anywhere, any hour. Uses 1 cloth, 1h base (the clock is hourly, so this is the smallest step; darkness and pace multiply it as usual). With no cloth it shows disabled: "Needs cloth."
+- **Rinse and bandage** (shown when you carry at least 0.25 L): the same, plus 0.25 L water.
+- Effect: the laceration (0.7 health/h, 0.1 hydration/h) becomes a *Bandaged cut*: 0.21 health/h (−70%), 0.05 hydration/h, remaining hours × 0.6 (min 2), no injured slowdown. It counts as **treated**, so it does not block health regen. The first aid kit still fully treats, including bandaged cuts and infection.
+- Infection: 15% with plain cloth, 5% rinsed. A dirty bandage looks the same; when it runs out it turns into an **Infected wound** for 48h: 0.35 health/h, 0.3 hydration/h, +1.2°C body-temperature target (fever), injured pace slowdown, blocks regen. A first aid kit cures it.
+- Snakebite and scorpion stings are never offered a bandage.
+- Journal: the first bandage writes "Cloth closes a cut well enough to keep walking. Rinse it first, or the wound turns." The first infection writes a hazard entry and a lesson. Death by infection is its own cause ("Infection") with its own lesson.
+
 ## Crafting (v4)
 
 `data/crafting.json`. Code: `src/logic/crafting.ts`. Knife, club, spear, and torch are each **handle + tool end + binding**. The tool decides what fits; the material decides the modifiers.

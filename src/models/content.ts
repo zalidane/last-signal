@@ -17,6 +17,7 @@ import copy from "../../data/copy.json";
 import schematics from "../../data/schematics.json";
 import wildlife from "../../data/wildlife.json";
 import crafting from "../../data/crafting.json";
+import woundcare from "../../data/woundcare.json";
 
 function indexBy<T extends { id: string }>(rows: T[]): Map<string, T> {
   return new Map(rows.map((row) => [row.id, row]));
@@ -56,6 +57,7 @@ export function createGameData(): GameData {
     wildlife: wildlife as unknown as GameData["wildlife"],
     animalById: new Map(),
     crafting: crafting as unknown as GameData["crafting"],
+    woundcare: woundcare as unknown as GameData["woundcare"],
     materialById: new Map(),
     toolById: new Map(),
   };
@@ -96,6 +98,7 @@ export function assertContent(data: GameData): void {
     "injury",
     "sickness",
     "exhaustion",
+    "infection",
     "rescued",
   ];
   for (const key of lessonKeys) need(Boolean(data.lessons[key]), `missing lesson ${key}`);

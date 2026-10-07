@@ -38,6 +38,9 @@ import { applyHazard, rollHazards } from "./hazards.ts";
 import { addItem, findLog, hasAll, itemQty, missingNames, presentItem, spend } from "./inventory.ts";
 import {
   learnDiscovery,
+  learnHazard,
+  addLesson,
+  noteRunHazard,
   learnSchematic,
   noteRunDiscovery,
   noteRunSchematic,
@@ -146,10 +149,84 @@ export function applyCommand(
 
 /** Runs after every command: an unanswered choice waits; fatigue at the limit drops you. */
 function afterStep(step: StepResult, data: GameData, rng: Rng): StepResult {
+  step = noteInfection(step, data);
   const ended = finishIfEnded(step.state, step.journal, data);
   if (ended.state.phase !== "playing" || ended.state.pending) return ended;
   if (ended.state.fatigue >= data.needs.fatigue.collapseAt) return collapse(ended.state, ended.journal, data, rng);
   return ended;
+}
+
+/** The first infected wound writes a journal entry, whenever it shows up. */
+function noteInfection(step: StepResult, data: GameData): StepResult {
+  const spec = data.woundcare.infectionJournal;
+  if (step.journal.hazards[spec.id]) return step;
+  if (!step.state.conditions.some((c) => c.id === data.woundcare.infection.id)) return step;
+  const learned = learnHazard(step.journal, { ...spec, learnedOnRun: runNumber(step.journal) });
+  const run = runNumber(step.journal);
+  const withLesson = addLesson(learned.journal, {
+    id: `first-infection-run${run}-d${step.state.day}-s${step.state.seed}`,
+    cause: "infection",
+    day: step.state.day,
+    text: data.lessons.infection.lesson,
+    run,
+    seed: step.state.seed,
+  });
+  return {
+    journal: withLesson,
+    state: pushLog(noteRunHazard(step.state, spec.id), `Journal: ${spec.text}`),
+  };
+}
+
+/** Improvised wound care: cloth over a cut. Weaker than a kit; dirty cloth can turn the wound. */
+function bandage(state: RunState, journal: Journal, rinse: boolean, data: GameData, rng: Rng): StepResult {
+  const spec = data.woundcare;
+  const cut = state.conditions.find((c) => c.id === spec.treats);
+  if (!cut) return fail(state, journal, "There is no open cut to bandage. Cloth does nothing for venom.");
+  if ((state.inventory[spec.cloth] ?? 0) < 1) return fail(state, journal, spec.logs.noCloth);
+  if (rinse && (state.inventory.water ?? 0) < spec.rinse.liters) return fail(state, journal, "Not enough water to rinse it.");
+  const plan = planAction(state, spec.hours, data);
+  const dirty = rng.next() < (rinse ? spec.rinse.infectionChance : spec.infectionChance);
+  const hoursLeft = Math.max(spec.minHours, Math.ceil(cut.hoursLeft * spec.hoursFactor));
+  let inventory = addItem(state.inventory, spec.cloth, -1);
+  if (rinse) inventory = addItem(inventory, "water", -spec.rinse.liters);
+  let next: RunState = {
+    ...state,
+    inventory,
+    conditions: [
+      ...state.conditions.filter((c) => c.id !== spec.treats),
+      { id: dirty ? spec.dirty : spec.clean, hoursLeft },
+    ],
+  };
+  if (rinse) next = pushLog(next, spec.logs.rinse);
+  next = withSlowNote(pushLog(next, spec.logs.bandage), plan);
+  let nextJournal = journal;
+  const learned = learnDiscovery(nextJournal, { ...spec.journal, learnedOnRun: runNumber(nextJournal) });
+  if (learned.learned) {
+    nextJournal = learned.journal;
+    next = pushLog(noteRunDiscovery(next, spec.journal.id), `Journal: ${spec.journal.text}`);
+  }
+  return runHours(next, nextJournal, plan.hours, contextFor("camp", atCamp(state)), data, rng);
+}
+
+function bandageButtons(state: RunState, data: GameData): ActionButton[] {
+  const spec = data.woundcare;
+  if (!state.conditions.some((c) => c.id === spec.treats)) return [];
+  const plan = planAction(state, spec.hours, data);
+  const cloth = state.inventory[spec.cloth] ?? 0;
+  if (cloth < 1) return [button("bandage", "Now", "Bandage the wound", spec.logs.noCloth, "", true, null)];
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const out = [
+    button("bandage", "Now", "Bandage the wound", `${planLabel(plan)} · 1 cloth · slows the bleeding by ${pct(spec.drainCut)} · ${pct(spec.infectionChance)} it turns`, "", false, {
+      type: "item", itemId: spec.cloth, action: "bandage",
+    }),
+  ];
+  const water = state.inventory.water ?? 0;
+  if (water >= spec.rinse.liters) {
+    out.push(button("bandage-rinse", "Now", "Rinse and bandage", `${planLabel(plan)} · 1 cloth + ${spec.rinse.liters} L water · ${pct(spec.rinse.infectionChance)} it turns`, "", false, {
+      type: "item", itemId: spec.cloth, action: "bandage-rinse",
+    }));
+  }
+  return out;
 }
 
 /**
@@ -689,6 +766,9 @@ function useItem(
   }
   if (itemId === "field-manual" && action === "read") return readManual(state, journal, data, rng);
   if (itemId === "first-aid" && action === "use") return useKit(state, journal, data);
+  if (itemId === data.woundcare.cloth && (action === "bandage" || action === "bandage-rinse")) {
+    return bandage(state, journal, action === "bandage-rinse", data, rng);
+  }
   const discovery = data.discoveryByItemId.get(itemId);
   if (!discovery) return fail(state, journal, "Nothing useful to do with that.");
   if (action === "eat") return eatDiscovery(state, journal, discovery, data);
@@ -798,7 +878,8 @@ function readManual(state: RunState, journal: Journal, data: GameData, rng: Rng)
 }
 
 function useKit(state: RunState, journal: Journal, data: GameData): StepResult {
-  const treatable = new Set(["snakebite", "scorpion", "laceration"]);
+  const w = data.woundcare;
+  const treatable = new Set(["snakebite", "scorpion", "laceration", w.clean, w.dirty, w.infection.id]);
   const had = state.conditions.filter((condition) => treatable.has(condition.id));
   if (had.length === 0 && state.sprainHours <= 0) {
     return fail(state, journal, "You pocket the kit again. Nothing is open or swelling.");
@@ -1078,9 +1159,11 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
       }),
     );
   }
-  const treatable = state.conditions.some((c) => ["snakebite", "scorpion", "laceration"].includes(c.id));
+  actions.push(...bandageButtons(state, data));
+  const w = data.woundcare;
+  const treatable = state.conditions.some((c) => ["snakebite", "scorpion", "laceration", w.clean, w.dirty, w.infection.id].includes(c.id));
   if ((treatable || state.sprainHours > 0) && (state.inventory["first-aid"] ?? 0) >= 1) {
-    actions.push(button("kit", "Now", "Use first aid", "Stops a bite, sting, or open cut", "", false, {
+    actions.push(button("kit", "Now", "Use first aid", "Fully treats a bite, sting, cut, or infection", "", false, {
       type: "item",
       itemId: "first-aid",
       action: "use",

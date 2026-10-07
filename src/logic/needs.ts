@@ -95,6 +95,7 @@ export function threatParts(state: RunState, data: GameData): HealthParts {
     starvation: 0,
     injury: 0,
     sickness: 0,
+    infection: 0,
   };
   if (state.bodyTempC >= t.heatCriticalC) parts.heat = data.needs.heatHealthPerHour.critical;
   else if (state.bodyTempC >= t.heatSevereC) parts.heat = data.needs.heatHealthPerHour.severe;
@@ -110,13 +111,14 @@ export function threatParts(state: RunState, data: GameData): HealthParts {
     const def = data.conditions[condition.id];
     if (!def || condition.hoursLeft <= 0 || def.healthPerHour <= 0) continue;
     if (def.threat === "sickness") parts.sickness += def.healthPerHour;
+    else if (def.threat === "infection") parts.infection += def.healthPerHour;
     else parts.injury += def.healthPerHour;
   }
   return parts;
 }
 
 export function partTotal(parts: HealthParts): number {
-  return parts.heat + parts.cold + parts.dehydration + parts.starvation + parts.injury + parts.sickness;
+  return parts.heat + parts.cold + parts.dehydration + parts.starvation + parts.injury + parts.sickness + parts.infection;
 }
 
 /** Heat wins ties. Empty meters never outrank a hotter threat of equal size. */
@@ -128,6 +130,7 @@ export function dominantThreat(parts: HealthParts): Threat | null {
     "starvation",
     "injury",
     "sickness",
+    "infection",
   ];
   let best: Threat | null = null;
   let bestValue = 0;
@@ -158,6 +161,9 @@ export function applyHour(state: RunState, ctx: HourContext, data: GameData): Ru
     (band.id === "hot" || band.id === "extreme")
   ) {
     target += data.needs.bodyTemp.dehydratedHeatBonusC;
+  }
+  for (const condition of next.conditions) {
+    if (condition.hoursLeft > 0) target += data.conditions[condition.id]?.feverC ?? 0;
   }
   const approach = data.needs.bodyTemp.approach;
   next.bodyTempC = clamp(
@@ -238,8 +244,16 @@ export function advanceTime(
 ): RunState {
   let current = state;
   for (let i = 0; i < hours; i += 1) {
+    const turning = current.conditions
+      .filter((condition) => condition.hoursLeft === 1 && data.conditions[condition.id]?.becomes)
+      .map((condition) => data.conditions[condition.id]?.becomes as string);
     current = applyHour(current, ctx, data);
     if (current.phase === "ended") return current;
+    for (const id of turning) {
+      const hoursLeft = id === data.woundcare.infection.id ? data.woundcare.infection.hours : 24;
+      current = { ...current, conditions: [...current.conditions.filter((c) => c.id !== id), { id, hoursLeft }] };
+      if (onNote && id === data.woundcare.infection.id) current = onNote(current, data.woundcare.logs.onset);
+    }
     const spoiled = spoilMeat(current, data);
     current = spoiled.state;
     if (onNote) for (const note of spoiled.notes) current = onNote(current, note);
@@ -285,7 +299,7 @@ export function regenBlockers(state: RunState, data: GameData): string[] {
   if (state.bodyTempC > r.maxBodyC) out.push("overheated");
   const draining = state.conditions.some((condition) => {
     const def = data.conditions[condition.id];
-    return Boolean(def) && condition.hoursLeft > 0 && (def?.healthPerHour ?? 0) > 0;
+    return Boolean(def) && !def?.treated && condition.hoursLeft > 0 && (def?.healthPerHour ?? 0) > 0;
   });
   if (draining) out.push("wounded");
   return out;

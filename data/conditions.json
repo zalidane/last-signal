@@ -61,5 +61,28 @@
     "healthPerHour": 0.2,
     "budgetFlag": "sunburn",
     "threat": "injury"
+  },
+  "bandaged-cut": {
+    "name": "Bandaged cut",
+    "hydrationPerHour": 0.05,
+    "healthPerHour": 0.21,
+    "threat": "injury",
+    "treated": true
+  },
+  "bandaged-cut-dirty": {
+    "name": "Bandaged cut",
+    "hydrationPerHour": 0.05,
+    "healthPerHour": 0.21,
+    "threat": "injury",
+    "treated": true,
+    "becomes": "infection"
+  },
+  "infection": {
+    "name": "Infected wound",
+    "hydrationPerHour": 0.3,
+    "healthPerHour": 0.35,
+    "budgetFlag": "injured",
+    "threat": "infection",
+    "feverC": 1.2
   }
 }

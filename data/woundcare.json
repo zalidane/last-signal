@@ -1,0 +1,29 @@
+{
+  "treats": "laceration",
+  "hours": 1,
+  "cloth": "cloth",
+  "drainCut": 0.7,
+  "hoursFactor": 0.6,
+  "minHours": 2,
+  "infectionChance": 0.15,
+  "rinse": { "liters": 0.25, "infectionChance": 0.05 },
+  "clean": "bandaged-cut",
+  "dirty": "bandaged-cut-dirty",
+  "infection": { "id": "infection", "hours": 48 },
+  "logs": {
+    "bandage": "You tear a strip of cloth and bind the cut tight. The bleeding slows to a seep. Good enough to keep walking.",
+    "rinse": "You pour a little water over the cut first, wince, and wrap it in clean cloth.",
+    "noCloth": "Needs cloth.",
+    "onset": "The bandaged cut is hot and swollen under the cloth. A fever is coming on. The wound has turned."
+  },
+  "journal": {
+    "id": "bandage",
+    "name": "Cloth bandage",
+    "text": "Cloth closes a cut well enough to keep walking. Rinse it first, or the wound turns."
+  },
+  "infectionJournal": {
+    "id": "infection",
+    "name": "Infected wound",
+    "text": "A dirty bandage can turn a cut into a fever: slow health loss, a hot body, slow hands. The first aid kit clears it. Rinse the wound before you wrap it."
+  }
+}

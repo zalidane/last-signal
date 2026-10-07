@@ -10,6 +10,7 @@ export type Threat =
   | "injury"
   | "sickness"
   | "exhaustion"
+  | "infection"
   | "rescued";
 
 export type BudgetFlag = "injured" | "sunburn" | "gut";
@@ -223,7 +224,30 @@ export interface ConditionDef {
   hydrationPerHour: number;
   healthPerHour: number;
   budgetFlag?: BudgetFlag;
-  threat: "injury" | "sickness";
+  threat: "injury" | "sickness" | "infection";
+  /** Counts as treated: does not block health regen. */
+  treated?: boolean;
+  /** When this condition runs out, this one starts (a dirty bandage turns into infection). */
+  becomes?: string;
+  /** Raises the body's target temperature while active. */
+  feverC?: number;
+}
+
+export interface WoundCareConfig {
+  treats: string;
+  hours: number;
+  cloth: string;
+  drainCut: number;
+  hoursFactor: number;
+  minHours: number;
+  infectionChance: number;
+  rinse: { liters: number; infectionChance: number };
+  clean: string;
+  dirty: string;
+  infection: { id: string; hours: number };
+  logs: { bandage: string; rinse: string; noCloth: string; onset: string };
+  journal: { id: string; name: string; text: string };
+  infectionJournal: { id: string; name: string; text: string };
 }
 
 export interface ItemDef {
@@ -569,6 +593,7 @@ export interface GameData {
   wildlife: WildlifeConfig;
   animalById: Map<string, AnimalDef>;
   crafting: CraftingConfig;
+  woundcare: WoundCareConfig;
   materialById: Map<string, MaterialDef>;
   toolById: Map<string, ToolDef>;
 }
@@ -722,6 +747,7 @@ export interface HealthParts {
   starvation: number;
   injury: number;
   sickness: number;
+  infection: number;
 }
 
 export type Command =

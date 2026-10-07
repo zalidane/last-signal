@@ -10,6 +10,7 @@ function discoveryName(id: string, data: GameData): string {
     data.discoveryById.get(id)?.name ??
     wildlifeJournalEntries(data).find((entry) => entry.id === id)?.name ??
     craftingJournalEntries(data).find((entry) => entry.id === id)?.name ??
+    (id === data.woundcare.journal.id ? data.woundcare.journal.name : undefined) ??
     id
   );
 }
@@ -17,7 +18,11 @@ function discoveryName(id: string, data: GameData): string {
 function hazardName(id: string, data: GameData): string {
   return (
     data.hazardById.get(id)?.name ??
-    (id === data.events.sandstorm.id ? data.events.sandstorm.name : id)
+    (id === data.events.sandstorm.id
+      ? data.events.sandstorm.name
+      : id === data.woundcare.infectionJournal.id
+        ? data.woundcare.infectionJournal.name
+        : id)
   );
 }
 

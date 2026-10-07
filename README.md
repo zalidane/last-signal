@@ -33,6 +33,8 @@ The day starts at 06:00. There is no work-hour budget: every action costs clock 
 - A lit signal fire burns one fuel bundle each dawn and pulls the hidden rescue day earlier. The day itself stays off the screen until the end card.
 - Not every seed can be won. A death still writes a lesson.
 
+- Cut yourself? Bandage the wound with cloth: it slows the bleeding and lets you heal, but dirty cloth can turn it (15%). Rinse it with 0.25 L of water first (5%). A first aid kit fully treats cuts, bites, stings, and infection.
+
 ### Crafting
 
 Knife, club, spear, and torch are each built from three parts: a **handle**, a **tool end**, and a **binding**.

@@ -119,6 +119,8 @@ export function journalCompletion(journal: Journal, data: GameData): number {
     data.events.sandstorm.id,
     ...wildlifeJournalEntries(data).map((entry) => entry.id),
     ...craftingJournalEntries(data).map((entry) => entry.id),
+    data.woundcare.journal.id,
+    data.woundcare.infectionJournal.id,
   ];
   if (ids.length === 0) return 0;
   const known = ids.filter(

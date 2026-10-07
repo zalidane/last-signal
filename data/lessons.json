@@ -38,5 +38,10 @@
     "label": "Collapse",
     "card": "You went down where you stood, and the desert did the rest.",
     "lesson": "Fatigue at 100 drops you where you stand until dawn, in whatever the sky is doing. Away from camp that means the full night or the full sun. Rest before the meter fills."
+  },
+  "infection": {
+    "label": "Infection",
+    "card": "The cut closed over something that should have been rinsed out.",
+    "lesson": "A cloth bandage stops the bleeding, not the dirt. Rinse a cut with a little water before you wrap it, and spend a first aid kit on a wound that turns hot and swollen."
   }
 }
