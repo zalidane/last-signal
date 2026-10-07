@@ -135,6 +135,16 @@ export interface NeedsConfig {
     logCamp: string;
     logWake: string;
     warning: string;
+    /** Fixed hours unconscious, from the moment of collapse, at any hour. */
+    hours: number;
+    /** Felt-temperature change while collapsed in the open by day (0 = full sun, no shade). */
+    openDayDeltaC: number;
+  };
+  sleep: {
+    /** Sleep lengths offered as buttons. */
+    hourOptions: number[];
+    /** "Sleep until dawn" is offered only when dawn is at most this many hours away. */
+    dawnMaxHours: number;
   };
   ration: {
     hunger: number;
@@ -155,6 +165,8 @@ export interface WaitConfig {
     fatigueMultiplier: number;
     moralePerHour: number;
     hazardChance: number;
+    /** hazardChance is for a sleep this long; shorter sleeps scale it down. */
+    fullNightHours: number;
     hazardId: string;
     hazardLog: string;
   };
@@ -754,7 +766,8 @@ export type Command =
   | { type: "new-run"; seed?: number }
   | { type: "abandon" }
   | { type: "rest" }
-  | { type: "sleep" }
+  /** hours omitted means "until dawn" (only offered when dawn is close). */
+  | { type: "sleep"; hours?: number }
   /** Always legal. hours omitted means "until dawn". */
   | { type: "wait"; hours?: number }
   | { type: "travel"; zoneId: string }

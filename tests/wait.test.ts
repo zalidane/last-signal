@@ -52,7 +52,8 @@ describe("waiting is always a choice", () => {
         expect(wait?.command, `${location} ${hour}:00`).toEqual({ type: "wait", hours: 1 });
         expect(hasValidAction(state, emptyJournal(), gameData)).toBe(true);
         expect(enabled(state, "rest"), `rest ${location} ${hour}:00`).toBeTruthy();
-        expect(enabled(state, "sleep"), `sleep ${location} ${hour}:00`).toBeTruthy();
+        const sleeps = listActions(state, emptyJournal(), gameData).filter((a) => a.group === "Sleep" && !a.disabled);
+        expect(sleeps.length, `sleep ${location} ${hour}:00`).toBeGreaterThan(0);
       }
     }
   });
@@ -76,7 +77,7 @@ describe("waiting is always a choice", () => {
     expect(enabled(state, "wait-1")).toBeTruthy();
     expect(enabled(state, "search-zone")).toBeTruthy();
     expect(enabled(state, "return")).toBeTruthy();
-    expect(enabled(state, "sleep")?.label).toBe("Sleep in the open");
+    expect(enabled(state, "sleep-dawn")?.detail).toContain("in the open");
 
     const waited = step(state, { type: "wait", hours: 1 }).state;
     expect(waited.phase).toBe("playing");

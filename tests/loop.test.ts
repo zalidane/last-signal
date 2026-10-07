@@ -92,7 +92,9 @@ describe("the desert loop", () => {
       const command: Command =
         state.hour >= 10 && state.hour < 16 && hoursUntilDawn(state.hour) >= 2
           ? { type: "rest" }
-          : { type: "sleep" };
+          : hoursUntilDawn(state.hour) <= gameData.needs.sleep.dawnMaxHours
+            ? { type: "sleep" }
+            : { type: "sleep", hours: Math.min(8, hoursUntilDawn(state.hour) - 10) };
       const moved = step(state, journal, command, rng);
       state = moved.state;
       journal = moved.journal;

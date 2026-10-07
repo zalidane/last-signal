@@ -107,14 +107,21 @@ describe("fatigue is the limiter", () => {
     expect(action(state, "rest")?.warning).not.toBe(gameData.needs.collapse.warning);
   });
 
-  it("collapses at 100: forced sleep where you stand until 06:00, nothing else happens first", () => {
-    const state = fresh({ hour: 10, location: "dry-wash", visited: ["camp", "dry-wash"], fatigue: 95 });
+  it("collapses at 100: out where you stand for 10 hours, across dawn, nothing else happens first", () => {
+    const state = fresh({ hour: 19, location: "dry-wash", visited: ["camp", "dry-wash"], fatigue: 95 });
     const after = step(state, { type: "search" }, flatRng(0.99));
     const s = after.state;
     expect(s.phase).toBe("playing");
     expect(s.location).toBe("dry-wash");
-    expect(s.hour).toBe(6);
+    // Out for exactly 10 hours from the moment of collapse, rolling over midnight and dawn.
+    const fellAt = s.log.find((line) => line.text === gameData.needs.collapse.logOpen);
+    const wokeAt = s.log.find((line) => line.text === gameData.needs.collapse.logWake);
+    if (!fellAt || !wokeAt) throw new Error("no collapse lines");
+    // Days roll over at 06:00, so count hours since that day's dawn.
+    const clock = (line: { day: number; hour: number }) => line.day * 24 + ((line.hour - 6 + 24) % 24);
+    expect(clock(wokeAt) - clock(fellAt)).toBe(10);
     expect(s.day).toBe(2);
+    expect(s.log.some((line) => line.text.startsWith("Day 2."))).toBe(true);
     expect(s.fatigue).toBeLessThan(100);
     const texts = s.log.map((line) => line.text);
     const fell = texts.indexOf(gameData.needs.collapse.logOpen);

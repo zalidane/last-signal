@@ -229,35 +229,41 @@ function bandageButtons(state: RunState, data: GameData): ActionButton[] {
   return out;
 }
 
+/** Bites and stings that find someone lying still in the open. Rolled once, on waking. */
+function rollLyingHazards(
+  step: StepResult,
+  risks: { id: string; chance: number; log?: string }[],
+  data: GameData,
+  rng: Rng,
+): StepResult {
+  let woke = step;
+  for (const risk of risks) {
+    if (woke.state.phase === "ended") break;
+    if (rng.next() >= risk.chance) continue;
+    const hazard = data.hazardById.get(risk.id);
+    if (hazard) woke = applyHazard(woke.state, woke.journal, hazard, data, risk.log);
+  }
+  return woke;
+}
+
 /**
- * Fatigue hit the limit. A hard stop: forced sleep where you stand until the next 06:00,
- * with full exposure away from camp, poor recovery, and things that bite.
+ * Fatigue hit the limit. A hard stop: unconscious where you stand for a fixed number of hours
+ * (data: collapse.hours) from this moment, at any time of day. Full exposure away from camp,
+ * poor recovery, and things that bite. Dawn still resolves if the hours cross 06:00.
  */
 export function collapse(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
   const spec = data.needs.collapse;
   const camp = atCamp(state);
-  const hours = hoursUntilDawn(state.hour);
   let step = runHours(
     pushLog(state, camp ? spec.logCamp : spec.logOpen),
     journal,
-    hours,
+    spec.hours,
     { activity: "sleep", atCamp: camp, exposure: 1, collapsed: true },
     data,
     rng,
-    (night, nightJournal) => {
-      let woke: StepResult = { state: night, journal: nightJournal };
-      if (!camp) {
-        for (const risk of spec.hazards) {
-          if (woke.state.phase === "ended") break;
-          if (rng.next() >= risk.chance) continue;
-          const hazard = data.hazardById.get(risk.id);
-          if (hazard) woke = applyHazard(woke.state, woke.journal, hazard, data);
-        }
-      }
-      if (woke.state.phase === "ended") return woke;
-      return { ...woke, state: pushLog(woke.state, spec.logWake) };
-    },
   );
+  if (step.state.phase !== "ended" && !camp) step = rollLyingHazards(step, spec.hazards, data, rng);
+  if (step.state.phase !== "ended") step = { ...step, state: pushLog(step.state, spec.logWake) };
   if (step.state.phase === "ended" && !step.state.ending) {
     step = { ...step, state: { ...step.state, pendingCause: "exhaustion" } };
   }
@@ -275,7 +281,7 @@ function dispatch(
     case "rest":
       return rest(state, journal, data, rng);
     case "sleep":
-      return sleep(state, journal, data, rng);
+      return sleep(state, journal, command.hours, data, rng);
     case "wait":
       return wait(state, journal, command.hours, data, rng);
     case "travel":
@@ -322,9 +328,20 @@ function rest(state: RunState, journal: Journal, data: GameData, rng: Rng): Step
   return { ...step, state: rollSighting(step.state, data, rng, "rest") };
 }
 
-function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
-  if (!atCamp(state)) return sleepOpen(state, journal, data, rng);
-  const hours = hoursUntilDawn(state.hour);
+/** Resolve a sleep request. Omitted means "until dawn", which is only legal when dawn is close. */
+export function sleepHoursFor(state: RunState, requested: number | undefined, data: GameData): number {
+  if (requested === undefined) {
+    const dawn = hoursUntilDawn(state.hour);
+    return dawn <= data.needs.sleep.dawnMaxHours ? dawn : 0;
+  }
+  if (!Number.isFinite(requested)) return 0;
+  return Math.floor(requested);
+}
+
+function sleep(state: RunState, journal: Journal, hoursRequested: number | undefined, data: GameData, rng: Rng): StepResult {
+  const hours = sleepHoursFor(state, hoursRequested, data);
+  if (hours < 1 || hours > 24) return fail(state, journal, "Dawn is too far off to sleep straight through. Pick a length.");
+  if (!atCamp(state)) return sleepOpen(state, journal, hours, data, rng);
   const cold =
     !state.camp.shelter && !state.camp.firePit
       ? " The wreck will only blunt the night, not stop it."
@@ -340,26 +357,14 @@ function sleep(state: RunState, journal: Journal, data: GameData, rng: Rng): Ste
 }
 
 /** Sleeping away from camp: allowed, but worse recovery and something may find you. */
-function sleepOpen(state: RunState, journal: Journal, data: GameData, rng: Rng): StepResult {
+function sleepOpen(state: RunState, journal: Journal, hours: number, data: GameData, rng: Rng): StepResult {
   const spec = data.needs.wait;
-  const hours = hoursUntilDawn(state.hour);
-  return runHours(
-    pushLog(state, spec.logs.sleepOpen),
-    journal,
-    hours,
-    contextFor("sleep", false),
-    data,
-    rng,
-    (night, nightJournal) => {
-      let woke: StepResult = { state: night, journal: nightJournal };
-      if (rng.next() < spec.openSleep.hazardChance) {
-        const hazard = data.hazardById.get(spec.openSleep.hazardId);
-        if (hazard) woke = applyHazard(night, nightJournal, hazard, data, spec.openSleep.hazardLog);
-      }
-      if (woke.state.phase === "ended") return woke;
-      return { ...woke, state: pushLog(woke.state, spec.logs.sleepOpenDone) };
-    },
-  );
+  let step = runHours(pushLog(state, spec.logs.sleepOpen), journal, hours, contextFor("sleep", false), data, rng);
+  if (step.state.phase === "ended") return step;
+  const chance = spec.openSleep.hazardChance * Math.min(1, hours / spec.openSleep.fullNightHours);
+  step = rollLyingHazards(step, [{ id: spec.openSleep.hazardId, chance, log: spec.openSleep.hazardLog }], data, rng);
+  if (step.state.phase === "ended") return step;
+  return { ...step, state: pushLog(step.state, spec.logs.sleepOpenDone) };
 }
 
 /** Resolve a wait request to whole hours. Omitted means "until the next dawn". */
@@ -1174,32 +1179,7 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
   const restPreview = previewLine(state, restHours, contextFor("rest", camp), data);
   actions.push(button("rest", "Now", camp && state.camp.shelter ? "Rest in the shelter" : "Rest in shade", restPreview.detail, restPreview.warning, false, { type: "rest" }));
 
-  const dawnHours = hoursUntilDawn(state.hour);
-  if (camp) {
-    const night =
-      !state.camp.shelter && !state.camp.firePit
-        ? "A hard night against the wreck"
-        : state.camp.shelter && state.camp.firePit
-          ? "Shelter and fire"
-          : state.camp.shelter
-            ? "The shelter should blunt the cold"
-            : "The fire should cover the cold";
-    const preview = previewLine(state, dawnHours, contextFor("sleep", true), data);
-    actions.push(button("sleep", "Now", "Sleep until dawn", `${preview.detail} · ${night}`, preview.warning, false, { type: "sleep" }));
-  } else {
-    const preview = previewLine(state, dawnHours, contextFor("sleep", false), data);
-    actions.push(
-      button(
-        "sleep",
-        "Now",
-        "Sleep in the open",
-        `${preview.detail} · poor rest, no cover, things that bite`,
-        preview.warning,
-        false,
-        { type: "sleep" },
-      ),
-    );
-  }
+  actions.push(...sleepButtons(state, data));
 
   actions.push(...waitButtons(state, data));
 
@@ -1265,6 +1245,34 @@ export function listActions(state: RunState, journal: Journal, data: GameData): 
   }
 
   return actions;
+}
+
+/** Sleep for a chosen length. "Until dawn" only when dawn is close: no 23-hour daytime sleeps. */
+export function sleepButtons(state: RunState, data: GameData): ActionButton[] {
+  const camp = atCamp(state);
+  const ctx = contextFor("sleep", camp);
+  const where = camp
+    ? !state.camp.shelter && !state.camp.firePit
+      ? "against the wreck"
+      : state.camp.shelter && state.camp.firePit
+        ? "shelter and fire"
+        : state.camp.shelter
+          ? "in the shelter"
+          : "by the fire"
+    : "in the open · poor rest, things that bite";
+  const dawnHours = hoursUntilDawn(state.hour);
+  const dawnOk = dawnHours <= data.needs.sleep.dawnMaxHours;
+  const out: ActionButton[] = [];
+  for (const hours of [...new Set(data.needs.sleep.hourOptions)].filter((h) => h >= 1 && h <= 24)) {
+    if (dawnOk && hours >= dawnHours) continue;
+    const preview = previewLine(state, hours, ctx, data);
+    out.push(button(`sleep-${hours}`, "Sleep", `Sleep ${hours}h`, `${preview.detail} · ${where}`, preview.warning, false, { type: "sleep", hours }));
+  }
+  if (dawnOk) {
+    const preview = previewLine(state, dawnHours, ctx, data);
+    out.push(button("sleep-dawn", "Sleep", "Sleep until dawn", `${preview.detail} · ${where}`, preview.warning, false, { type: "sleep" }));
+  }
+  return out;
 }
 
 /** The always-available actions. These never disable: waiting is a survivor's choice, not a menu state. */

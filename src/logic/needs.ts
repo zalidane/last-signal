@@ -24,6 +24,11 @@ export function feltTemperature(
 
   if (ctx.activity === "travel") return felt;
 
+  // Collapsed in the open: no shade chosen, no hollow scraped. Full sun by day, open sky by night.
+  if (ctx.collapsed && !ctx.atCamp) {
+    return felt + (cold ? mods.openNightDeltaC : data.needs.collapse.openDayDeltaC);
+  }
+
   if (ctx.activity === "wait" && !ctx.atCamp) {
     return felt + (cold ? mods.openNightDeltaC : mods.openDayDeltaC);
   }

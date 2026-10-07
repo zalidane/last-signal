@@ -21,7 +21,7 @@ Meters are 0–100. Health starts at 100. `data/needs.json`.
 | Hydration | At 0, lose 2.1 health per hour. About two days from full health. |
 | Hunger | At 0, lose 1.05 health per hour. About four days. |
 | Temperature | Body temperature, not a bar you fill by eating. Heat and cold below. |
-| Fatigue | The limiter. Slows actions at 60 and 85; at 100 you collapse until dawn. See Pace. |
+| Fatigue | The limiter. Slows actions at 60 and 85; at 100 you collapse for 10 hours. See Pace. |
 | Morale | Light. Very low morale slows actions a little. |
 
 One hour of any single empty meter cannot drop health from 100 to 0. Critical heat is 14 health per hour, thirst 2.1, hunger 1.05. They stack. Heat wins ties.
@@ -62,7 +62,7 @@ Waiting is a survivor's choice, not a menu state. **Invariant: a live run always
 - Buttons: `Wait 1h`, `Wait 2h` (`needs.wait.hourOptions`), and `Wait until dawn` when that is a different length. A wait that crosses 06:00 runs the full dawn: day +1, stills, signal fuel, rescue check, and sandstorm roll.
 - Exposure uses the normal hour tick with activity `wait` (`needs.activities.wait`). At camp the wreck, shelter, and fire modifiers apply as for rest. In a zone you are in the open: `felt.openDayDeltaC` 0 by day, `felt.openNightDeltaC` 0 at night. Hydration multipliers: `wait-open` 0.8, `wait-camp` 0.55, `wait-shelter` 0.4.
 - Rough cost from 37°C and full health: 6h exposed from 10:00 takes about 32 health (heat). An open night from 22:00 to dawn takes about 48 health (cold). The same night in a shelter with a fire costs nothing.
-- `Sleep in the open` (sleep away from camp) runs to dawn with the bare-air night, fatigue recovery ×0.4, morale −0.6/h, and a 12% chance of a scorpion sting at dawn (`needs.wait.openSleep`). Waiting awake skips the sting but recovers less.
+- **Sleep (v6)** is a chosen length: `Sleep 2h / 4h / 6h / 8h` (`needs.sleep.hourOptions`), plus `Sleep until dawn` only when dawn is at most 10h away (`needs.sleep.dawnMaxHours`), i.e. from 20:00 on. Options at or past dawn are folded into "until dawn". There are no 23-hour daytime sleeps; a `sleep` command without hours is refused by day. Each option shows its preview (water, health, warnings). Camp vs open is unchanged: camp uses the wreck, shelter, and fire; sleeping away from camp uses the bare air, fatigue recovery ×0.4, morale −0.6/h, and a scorpion sting chance on waking of 12% × (hours / 10), capped at 12% (`needs.wait.openSleep`). Regen rates are as in Health regen. Waiting awake skips the sting but recovers less.
 
 ## Pace, fatigue, and collapse (v3)
 
@@ -71,7 +71,7 @@ Waiting is a survivor's choice, not a menu state. **Invariant: a live run always
 Action time = base hours × fatigue × darkness × (1 + strain), rounded to whole hours, never below base, multiplier capped at ×3 (`pace.maxMult`). Rest, sleep, and wait are fixed lengths and are never scaled. The header shows the current multiplier for unlit work ("action pace"); each button shows its own hours, e.g. `3h (normally 2h)`.
 
 - **Fatigue** (`fatigue.tiers`): at 60 "Tired" ×1.25 time and ×1.25 hazard odds; at 85 "Exhausted" ×1.5 time and ×1.6 hazard odds. Work adds fatigue per hour (camp 3.5, search 4.5, travel 5.5, build 6.5) plus heat (`fatigue.heatPerHour`: warm +0.5, hot +1.5, extreme +3). Rest −7/h, sleep −11/h, wait −3/h.
-- **Collapse** (`fatigue.collapseAt` 100, `collapse`): checked after every command. A hard stop: you sleep where you stand until the next 06:00. Away from camp that is the full open exposure (bare-air heat or cold, sleep-open thirst), plus 15% scorpion and 6% snakebite at dawn. Recovery is poor (fatigue recovery ×0.5, morale −0.8/h, regen 0.1/h only if otherwise eligible). At camp you get the camp's shelter and fire. A death during collapse is recorded as **Collapse** (`lessons.exhaustion`) with its own journal lesson. Any button whose preview ends at fatigue 100 shows the warning "Collapse: fatigue will hit 100".
+- **Collapse** (`fatigue.collapseAt` 100, `collapse`): checked after every command. A hard stop: you are unconscious where you stand for exactly 10 hours from that moment (`collapse.hours`), at any time of day. If those hours cross 06:00, dawn resolves as usual (day +1, stills, signal fuel, rescue, sandstorm). Away from camp it is full exposure: no shade by day (`collapse.openDayDeltaC` 0, so midday air is 53°C) and the bare sky by night, sleep-open thirst, plus 15% scorpion and 6% snakebite rolled on waking. Ten midday hours in the open cost about 40 health from full; from low health or water they kill. Recovery is poor (fatigue recovery ×0.5, morale −0.8/h, regen 0.1/h only if otherwise eligible). At camp you get the camp's shelter and fire. A death during collapse is recorded as **Collapse** (`lessons.exhaustion`) with its own journal lesson. Any button whose preview ends at fatigue 100 shows the warning "Collapse: you'll be out for 10 hours".
 - **Strain** (`strain.rules`, the old work-hour cuts): hydration <50/<30/<15 slow +0.1/+0.15/+0.2 and risk +0.1/+0.15/+0.2; hunger <40/<20 slow +0.1/+0.15, risk +0.05/+0.1; morale <15 slow +0.1; injured (sprain, bite, sting, cut, concussion) slow +0.2, risk +0.15; sunburn slow +0.1; gut slow +0.2, risk +0.1. Slow is capped at +1.0. Risk multiplies every hazard roll during the action.
 
 ## Darkness (v3)

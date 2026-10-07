@@ -22,7 +22,7 @@ npm run build
 
 ## How to play
 
-The day starts at 06:00. There is no work-hour budget: every action costs clock time and fatigue. Tired (60) and exhausted (85) survivors work slower and get hurt more; at 100 fatigue you collapse where you stand until dawn. Night (19:00–06:00) slows everything and wakes snakes and scorpions; some work needs a fire or a torch. Rest, sleep, and waiting heal slowly if you are fed, watered, warm, and not bleeding.
+The day starts at 06:00. There is no work-hour budget: every action costs clock time and fatigue. Tired (60) and exhausted (85) survivors work slower and get hurt more; at 100 fatigue you collapse where you stand and are out for 10 hours, whatever the hour. Sleep for 2, 4, 6, or 8 hours, or until dawn once it is 10 hours or less away. Night (19:00–06:00) slows everything and wakes snakes and scorpions; some work needs a fire or a torch. Rest, sleep, and waiting heal slowly if you are fed, watered, warm, and not bleeding.
 
 - In the wash and on the ridge you may meet a rattlesnake or a scorpion. Back away, or try to kill it: a knife, club, or spear makes that far safer. Cook the meat on the fire pit; raw meat can make you sick.
 

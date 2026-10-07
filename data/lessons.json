@@ -37,7 +37,7 @@
   "exhaustion": {
     "label": "Collapse",
     "card": "You went down where you stood, and the desert did the rest.",
-    "lesson": "Fatigue at 100 drops you where you stand until dawn, in whatever the sky is doing. Away from camp that means the full night or the full sun. Rest before the meter fills."
+    "lesson": "Fatigue at 100 drops you where you stand for ten hours, in whatever the sky is doing. Away from camp that means the full night or the full midday sun. Rest before the meter fills."
   },
   "infection": {
     "label": "Infection",

@@ -204,7 +204,7 @@ function renderLog(play: PlayView): string {
 }
 
 function renderActions(play: PlayView): string {
-  const groups = ["Now", "Move", "Build"];
+  const groups = ["Now", "Sleep", "Move", "Build"];
   return groups
     .map((group) => {
       const items = play.actions.filter((action) => action.group === group);
